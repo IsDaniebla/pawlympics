@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pawlympics - Concurso de Salto Canino</title>
+    <style>
+      canvas {
+        border: 2px solid black;
+      }
+      .game-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        padding: 20px;
+      }
+      .game-controls {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-container">
+      <div class="game-controls">
+        <label for="trainerName">Nombre del entrenador:</label>
+        <input type="text" id="trainerName" value="Angel">
+        <label for="hurdlesCount">Número de vallas:</label>
+        <input type="number" id="hurdlesCount" value="5" min="1" max="20">
+        <button onclick="restartGame()">Reiniciar Juego</button>
+      </div>
+      <canvas id="gameCanvas" width="800" height="400"></canvas>
+    </div>
+    <script type="module">
+      import { Game } from './src/game/Game.ts';
+      
+      let game;
+
+      window.restartGame = () => {
+        const hurdlesCount = parseInt(document.getElementById('hurdlesCount').value) || 5;
+        const trainerName = document.getElementById('trainerName').value || 'Angel';
+        
+        if (!game) {
+          game = new Game('gameCanvas');
+        }
+        game.setTrainerName(trainerName);
+        game.setTotalHurdles(hurdlesCount);
+      };
+
+      // Iniciar el juego automáticamente
+      window.onload = () => {
+        restartGame();
+      };
+    </script>
+  </body>
+</html>
