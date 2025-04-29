@@ -33,6 +33,7 @@ export class Game {
     private clouds: Array<{x: number, y: number, width: number}> = [];
     private grass: Array<{x: number, y: number, height: number}> = [];
     private flowers: Array<{x: number, y: number, color: string, size: number}> = [];
+    private successfulHurdles: number = 0;
 
     constructor(canvasId: string) {
         this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
@@ -89,8 +90,10 @@ export class Game {
     private initializeGame() {
         this.cleanup();
 
+        // Reiniciar todas las variables del juego
         this.score = 0;
         this.currentHurdle = 1;
+        this.successfulHurdles = 0;
         this.gameOver = false;
         this.isJumping = false;
         this.trafficLight = new TrafficLight(300, 50);
@@ -98,14 +101,17 @@ export class Game {
         this.lastColorChangeTime = 0;
         this.canJump = false;
         this.terrainOffset = 0;
-        
-        // Generar secuencia aleatoria de colores
+
+        // Reiniciar elementos del juego
         this.generateColorSequence();
-        
         this.dog = new Dog(100, this.canvas.height - 100);
         this.createNewHurdle();
         
-        document.addEventListener('keydown', this.boundKeydownHandler);
+        // Esperar un momento antes de habilitar los controles
+        setTimeout(() => {
+            document.addEventListener('keydown', this.boundKeydownHandler);
+        }, 1000);
+
         this.startGame();
     }
 
@@ -217,7 +223,7 @@ export class Game {
     }
 
     private updateTrafficLight(currentTime: number) {
-        if (this.isJumping || this.gameOver) return; // No actualizar si está saltando o el juego terminó
+        if (this.isJumping || this.gameOver) return;
 
         if (!this.lastColorChangeTime) {
             this.lastColorChangeTime = currentTime;
@@ -228,17 +234,17 @@ export class Game {
                 this.currentColorIndex++;
                 this.lastColorChangeTime = currentTime;
 
-                // Habilitar el salto solo cuando la luz es verde
-                this.canJump = this.trafficLightColors[this.currentColorIndex] === 'green';
+                // Habilitar el salto en verde, amarillo y naranja
+                const currentColor = this.trafficLightColors[this.currentColorIndex];
+                this.canJump = currentColor === 'green' || 
+                              currentColor === 'yellow' || 
+                              currentColor === 'orange';
             } else if (!this.isJumping && !this.gameOver) {
-                // Si llegamos al último color (rojo) y el perro no está saltando,
-                // consideramos que perdió su oportunidad
-                this.isJumping = true; // Prevenir múltiples fallos
+                this.isJumping = true;
                 this.dog.failJump();
                 setTimeout(() => {
                     if (this.currentHurdle < this.totalHurdles) {
                         this.nextHurdle();
-                        // Reiniciar la secuencia del semáforo
                         this.generateColorSequence();
                         this.currentColorIndex = 0;
                         this.lastColorChangeTime = currentTime;
@@ -325,6 +331,55 @@ export class Game {
         }
     }
 
+    private drawPointsInfo() {
+        // Panel de información de puntos
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        this.ctx.fillRect(this.canvas.width - 210, 10, 200, 140);
+        
+        this.ctx.fillStyle = 'black';
+        this.ctx.font = 'bold 20px Arial';
+        this.ctx.textAlign = 'left';
+        
+        // Título
+        this.ctx.fillText('Puntos por Color:', this.canvas.width - 200, 35);
+        
+        // Información de puntos por color
+        const startX = this.canvas.width - 200;
+        const circleRadius = 8;
+        
+        // Verde
+        this.ctx.fillStyle = 'green';
+        this.ctx.beginPath();
+        this.ctx.arc(startX + circleRadius, 55, circleRadius, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.fillStyle = 'black';
+        this.ctx.fillText('Verde: 15 pts', startX + 25, 60);
+        
+        // Amarillo
+        this.ctx.fillStyle = 'yellow';
+        this.ctx.beginPath();
+        this.ctx.arc(startX + circleRadius, 85, circleRadius, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.fillStyle = 'black';
+        this.ctx.fillText('Amarillo: 10 pts', startX + 25, 90);
+        
+        // Naranja
+        this.ctx.fillStyle = 'orange';
+        this.ctx.beginPath();
+        this.ctx.arc(startX + circleRadius, 115, circleRadius, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.fillStyle = 'black';
+        this.ctx.fillText('Naranja: 5 pts', startX + 25, 120);
+        
+        // Rojo
+        this.ctx.fillStyle = 'red';
+        this.ctx.beginPath();
+        this.ctx.arc(startX + circleRadius, 145, circleRadius, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.fillStyle = 'black';
+        this.ctx.fillText('Rojo: 0 pts', startX + 25, 150);
+    }
+
     private draw() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -352,18 +407,21 @@ export class Game {
         this.dog.draw(this.ctx);
         this.hurdle.draw(this.ctx);
 
-        // Información del juego
+        // Panel de información del juego (izquierda)
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        this.ctx.fillRect(10, 10, 200, 120);
+        
         this.ctx.fillStyle = 'black';
         this.ctx.font = 'bold 24px Arial';
         this.ctx.textAlign = 'left';
         
-        // Dibujar fondo para el contador
-        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-        this.ctx.fillRect(10, 10, 150, 40);
-        
-        // Dibujar el texto del contador
-        this.ctx.fillStyle = 'black';
-        this.ctx.fillText(`Valla: ${this.currentHurdle}/${this.totalHurdles}`, 20, 38);
+        // Mostrar información del juego
+        this.ctx.fillText(`Valla: ${this.currentHurdle}/${this.totalHurdles}`, 20, 40);
+        this.ctx.fillText(`Superadas: ${this.successfulHurdles}`, 20, 70);
+        this.ctx.fillText(`Puntos: ${this.score}`, 20, 100);
+
+        // Dibujar panel de información de puntos (derecha)
+        this.drawPointsInfo();
 
         if (this.gameOver) {
             // Fondo semitransparente
@@ -374,11 +432,23 @@ export class Game {
             this.ctx.fillStyle = 'white';
             this.ctx.font = 'bold 48px Arial';
             this.ctx.textAlign = 'center';
-            this.ctx.fillText('¡Juego Terminado!', this.canvas.width/2, this.canvas.height/2);
+            this.ctx.fillText('¡Juego Terminado!', this.canvas.width/2, this.canvas.height/2 - 60);
             
-            // Mostrar puntuación final
+            // Mostrar resultados finales
             this.ctx.font = 'bold 36px Arial';
-            this.ctx.fillText(`Vallas Superadas: ${this.currentHurdle - 1}/${this.totalHurdles}`, this.canvas.width/2, this.canvas.height/2 + 60);
+            
+            // Mensaje específico si perdió por saltar en rojo
+            const currentColor = this.trafficLightColors[this.currentColorIndex];
+            if (currentColor === 'red' && this.isJumping) {
+                this.ctx.fillText('¡Has saltado en rojo!', this.canvas.width/2, this.canvas.height/2);
+            }
+            
+            this.ctx.fillText(`Vallas Superadas: ${this.successfulHurdles}/${this.totalHurdles}`, this.canvas.width/2, this.canvas.height/2 + 50);
+            this.ctx.fillText(`Puntuación Final: ${this.score} puntos`, this.canvas.width/2, this.canvas.height/2 + 100);
+            
+            // Instrucciones para reiniciar
+            this.ctx.font = 'bold 24px Arial';
+            this.ctx.fillText('Presiona ESPACIO para reiniciar', this.canvas.width/2, this.canvas.height/2 + 160);
             
             // Restablecer alineación del texto
             this.ctx.textAlign = 'left';
@@ -386,31 +456,61 @@ export class Game {
     }
 
     private handleKeydown(e: KeyboardEvent) {
-        if (e.code === 'Space' && !this.isJumping && !this.gameOver && this.canJump) {
-            this.jump();
+        // Evitar que el evento se procese múltiples veces
+        if (e.repeat) return;
+
+        if (e.code === 'Space') {
+            if (this.gameOver) {
+                this.initializeGame();
+            } else if (!this.isJumping) {
+                // Permitir el salto en cualquier color, pero las consecuencias se manejan en jump()
+                this.jump();
+            }
+            // Prevenir el comportamiento por defecto del espacio
+            e.preventDefault();
         }
     }
 
     private jump() {
-        if (this.gameOver || this.currentHurdle > this.totalHurdles) return;
+        if (this.gameOver || this.currentHurdle > this.totalHurdles || this.isJumping) return;
         
         this.isJumping = true;
+        this.canJump = false;
         
-        // Obtener puntos basados en el color actual del semáforo
+        // Obtener el color actual del semáforo
         const currentColor = this.trafficLightColors[this.currentColorIndex];
-        const colorPoints = this.colorPoints[currentColor];
 
-        if (currentColor === 'green') {
-            this.score += colorPoints;
+        if (currentColor === 'red') {
+            // Si salta en rojo, el perro se cae y pierde
+            this.dog.failJump();
+            this.gameOver = true;
+            return;
+        }
+
+        // Determinar si el salto es exitoso basado en el color
+        const isSuccessfulJump = currentColor === 'green' || 
+                                currentColor === 'yellow' || 
+                                currentColor === 'orange';
+
+        if (isSuccessfulJump) {
+            // Asignar puntos según el color
+            if (currentColor === 'green') {
+                this.score += 15; // Más puntos por salto en verde
+            } else if (currentColor === 'yellow') {
+                this.score += 10; // Puntos intermedios por amarillo
+            } else if (currentColor === 'orange') {
+                this.score += 5; // Menos puntos por naranja
+            }
+            
+            this.successfulHurdles++;
             this.dog.perfectJump();
         } else {
             this.dog.failJump();
         }
 
         setTimeout(() => {
-            if (this.currentHurdle < this.totalHurdles) {
+            if (this.currentHurdle < this.totalHurdles && !this.gameOver) {
                 this.nextHurdle();
-                // Reiniciar la secuencia del semáforo después del salto
                 this.generateColorSequence();
                 this.currentColorIndex = 0;
                 this.lastColorChangeTime = performance.now();
@@ -421,7 +521,7 @@ export class Game {
     }
 
     private update() {
-        if (!this.gameOver) {
+        if (!this.gameOver) { 
             this.dog.update();
             this.checkCollision();
             // Actualizar el semáforo
@@ -446,6 +546,10 @@ export class Game {
     }
 
     private startGame() {
+        if (this.gameLoopId !== null) {
+            cancelAnimationFrame(this.gameLoopId);
+        }
+
         const gameLoop = () => {
             this.update();
             this.draw();
@@ -459,6 +563,7 @@ export class Game {
     }
 
     public setTotalHurdles(total: number) {
+        this.cleanup(); // Limpiar el estado anterior
         this.totalHurdles = total;
         this.initializeGame();
     }
