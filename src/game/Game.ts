@@ -140,18 +140,16 @@ export class Game {
     }
 
     private nextHurdle() {
-        this.currentHurdle++;
-        if (this.currentHurdle <= this.totalHurdles) {
-            this.dog.reset(50);
-            this.createNewHurdle();
-            this.isJumping = false;
-            // Generar nueva secuencia de colores para la siguiente valla
-            this.generateColorSequence();
-            this.currentColorIndex = 0;
-            this.lastColorChangeTime = 0;
-        } else {
+        if (this.currentHurdle >= this.totalHurdles) {
             this.gameOver = true;
+            return;
         }
+        
+        this.currentHurdle++;
+        this.dog.reset(50);
+        this.createNewHurdle();
+        this.isJumping = false;
+        this.canJump = false;
     }
 
     private drawClouds() {
@@ -219,6 +217,8 @@ export class Game {
     }
 
     private updateTrafficLight(currentTime: number) {
+        if (this.isJumping || this.gameOver) return; // No actualizar si está saltando o el juego terminó
+
         if (!this.lastColorChangeTime) {
             this.lastColorChangeTime = currentTime;
         }
@@ -230,6 +230,23 @@ export class Game {
 
                 // Habilitar el salto solo cuando la luz es verde
                 this.canJump = this.trafficLightColors[this.currentColorIndex] === 'green';
+            } else if (!this.isJumping && !this.gameOver) {
+                // Si llegamos al último color (rojo) y el perro no está saltando,
+                // consideramos que perdió su oportunidad
+                this.isJumping = true; // Prevenir múltiples fallos
+                this.dog.failJump();
+                setTimeout(() => {
+                    if (this.currentHurdle < this.totalHurdles) {
+                        this.nextHurdle();
+                        // Reiniciar la secuencia del semáforo
+                        this.generateColorSequence();
+                        this.currentColorIndex = 0;
+                        this.lastColorChangeTime = currentTime;
+                        this.isJumping = false;
+                    } else {
+                        this.gameOver = true;
+                    }
+                }, 1500);
             }
         }
     }
@@ -337,17 +354,33 @@ export class Game {
 
         // Información del juego
         this.ctx.fillStyle = 'black';
-        this.ctx.font = '20px Arial';
-        this.ctx.fillText(`Valla: ${this.currentHurdle}/${this.totalHurdles}`, 10, 30);
+        this.ctx.font = 'bold 24px Arial';
+        this.ctx.textAlign = 'left';
+        
+        // Dibujar fondo para el contador
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        this.ctx.fillRect(10, 10, 150, 40);
+        
+        // Dibujar el texto del contador
+        this.ctx.fillStyle = 'black';
+        this.ctx.fillText(`Valla: ${this.currentHurdle}/${this.totalHurdles}`, 20, 38);
 
         if (this.gameOver) {
+            // Fondo semitransparente
             this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            
+            // Texto de juego terminado
             this.ctx.fillStyle = 'white';
-            this.ctx.font = '40px Arial';
+            this.ctx.font = 'bold 48px Arial';
             this.ctx.textAlign = 'center';
             this.ctx.fillText('¡Juego Terminado!', this.canvas.width/2, this.canvas.height/2);
-            this.ctx.fillText(`Puntuación Final: ${this.score}`, this.canvas.width/2, this.canvas.height/2 + 50);
+            
+            // Mostrar puntuación final
+            this.ctx.font = 'bold 36px Arial';
+            this.ctx.fillText(`Vallas Superadas: ${this.currentHurdle - 1}/${this.totalHurdles}`, this.canvas.width/2, this.canvas.height/2 + 60);
+            
+            // Restablecer alineación del texto
             this.ctx.textAlign = 'left';
         }
     }
@@ -359,6 +392,8 @@ export class Game {
     }
 
     private jump() {
+        if (this.gameOver || this.currentHurdle > this.totalHurdles) return;
+        
         this.isJumping = true;
         
         // Obtener puntos basados en el color actual del semáforo
@@ -373,7 +408,15 @@ export class Game {
         }
 
         setTimeout(() => {
-            this.nextHurdle();
+            if (this.currentHurdle < this.totalHurdles) {
+                this.nextHurdle();
+                // Reiniciar la secuencia del semáforo después del salto
+                this.generateColorSequence();
+                this.currentColorIndex = 0;
+                this.lastColorChangeTime = performance.now();
+            } else {
+                this.gameOver = true;
+            }
         }, 1500);
     }
 
