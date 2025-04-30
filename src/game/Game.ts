@@ -1,6 +1,5 @@
 import { Dog } from "./Dog";
 import { Hurdle } from "./Hurdle";
-import { TrafficLight } from "./TrafficLight";
 
 export class Game {
     private canvas: HTMLCanvasElement;
@@ -8,22 +7,13 @@ export class Game {
     private dog: Dog = new Dog(50, 0);
     private hurdle: Hurdle = new Hurdle(0, 0);
     private score: number = 0;
-    private trainerName: string = 'Angel';
-    private trafficLight: TrafficLight = new TrafficLight(300, 50);
     private isJumping: boolean = false;
     private totalHurdles: number = 5;
     private currentHurdle: number = 1;
     private gameOver: boolean = false;
     private boundKeydownHandler: (e: KeyboardEvent) => void;
     private gameLoopId: number | null = null;
-    private stones: Array<{x: number, y: number, size: number}> = [];
     private trafficLightColors: string[] = ['red'];
-    private colorPoints: { [key: string]: number } = {
-        'red': 0,
-        'yellow': 1,
-        'orange': 2,
-        'green': 3
-    };
     private currentColorIndex: number = 0;
     private lastColorChangeTime: number = 0;
     private colorChangeDuration: number = 1000;
@@ -34,6 +24,12 @@ export class Game {
     private grass: Array<{x: number, y: number, height: number}> = [];
     private flowers: Array<{x: number, y: number, color: string, size: number}> = [];
     private successfulHurdles: number = 0;
+    private colorPoints = {
+        'red': 0,
+        'yellow': 10,
+        'orange': 5,
+        'green': 15
+    };
 
     constructor(canvasId: string) {
         this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
@@ -96,7 +92,7 @@ export class Game {
         this.successfulHurdles = 0;
         this.gameOver = false;
         this.isJumping = false;
-        this.trafficLight = new TrafficLight(300, 50);
+        this.trafficLightColors = ['red'];
         this.currentColorIndex = 0;
         this.lastColorChangeTime = 0;
         this.canJump = false;
@@ -130,19 +126,6 @@ export class Game {
         
         // Agregar los colores mezclados y el rojo final
         this.trafficLightColors = this.trafficLightColors.concat(middleColors, ['red']);
-    }
-
-    private initializeStones() {
-        this.stones = [];
-        for (let i = 0; i < this.canvas.width; i += 50) {
-            if (Math.random() > 0.7) {
-                this.stones.push({
-                    x: i,
-                    y: this.canvas.height - 90 + Math.random() * 30,
-                    size: Math.random() * 5 + 3
-                });
-            }
-        }
     }
 
     private nextHurdle() {
@@ -272,7 +255,6 @@ export class Game {
         for (const blade of this.grass) {
             let adjustedX = blade.x - this.terrainOffset;
             
-            // Si la hoja sale de la pantalla por la izquierda
             if (adjustedX < -10) {
                 blade.x += this.canvas.width + 20;
                 adjustedX = blade.x - this.terrainOffset;
@@ -296,19 +278,18 @@ export class Game {
         for (const flower of this.flowers) {
             let adjustedX = flower.x - this.terrainOffset;
             
-            // Si la flor sale completamente de la pantalla por la izquierda
             if (adjustedX < -20) {
                 flower.x += this.canvas.width + 40;
                 flower.y = this.canvas.height - 90 + Math.random() * 20;
                 adjustedX = flower.x - this.terrainOffset;
             }
             
-            // Tallo de la flor
+            // Tallo de la flor más alto
             this.ctx.strokeStyle = '#228B22';
             this.ctx.lineWidth = 1;
             this.ctx.beginPath();
             this.ctx.moveTo(adjustedX, flower.y);
-            this.ctx.lineTo(adjustedX, flower.y - 15);
+            this.ctx.lineTo(adjustedX, flower.y - 35); // Aumentado de -15 a -35 para tallos más altos
             this.ctx.stroke();
 
             // Pétalos
@@ -316,7 +297,7 @@ export class Game {
             for (let i = 0; i < 5; i++) {
                 const angle = (i * Math.PI * 2) / 5;
                 const petalX = adjustedX + Math.cos(angle) * flower.size;
-                const petalY = flower.y - 15 + Math.sin(angle) * flower.size;
+                const petalY = flower.y - 35 + Math.sin(angle) * flower.size; // Ajustado para la nueva altura
                 
                 this.ctx.beginPath();
                 this.ctx.arc(petalX, petalY, flower.size, 0, Math.PI * 2);
@@ -326,58 +307,65 @@ export class Game {
             // Centro de la flor
             this.ctx.fillStyle = '#FFFF00';
             this.ctx.beginPath();
-            this.ctx.arc(adjustedX, flower.y - 15, flower.size * 0.5, 0, Math.PI * 2);
+            this.ctx.arc(adjustedX, flower.y - 35, flower.size * 0.5, 0, Math.PI * 2); // Ajustado para la nueva altura
             this.ctx.fill();
         }
     }
 
     private drawPointsInfo() {
-        // Panel de información de puntos
+        // Panel de información de puntos con más padding
+        const panelPadding = 20;
+        const panelWidth = 200;
+        const panelHeight = 180; // Aumentado para más espacio
+        const startX = this.canvas.width - panelWidth - 10;
+        const startY = 10;
+
+        // Fondo del panel con más padding
         this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-        this.ctx.fillRect(this.canvas.width - 210, 10, 200, 140);
+        this.ctx.fillRect(startX, startY, panelWidth, panelHeight);
         
         this.ctx.fillStyle = 'black';
         this.ctx.font = 'bold 20px Arial';
         this.ctx.textAlign = 'left';
         
         // Título
-        this.ctx.fillText('Puntos por Color:', this.canvas.width - 200, 35);
+        this.ctx.fillText('Puntos por Color:', startX + panelPadding, startY + 25);
         
-        // Información de puntos por color
-        const startX = this.canvas.width - 200;
         const circleRadius = 8;
+        const textStartX = startX + panelPadding + 25;
+        const circleStartX = startX + panelPadding;
         
         // Verde
         this.ctx.fillStyle = 'green';
         this.ctx.beginPath();
-        this.ctx.arc(startX + circleRadius, 55, circleRadius, 0, Math.PI * 2);
+        this.ctx.arc(circleStartX + circleRadius, startY + 50, circleRadius, 0, Math.PI * 2);
         this.ctx.fill();
         this.ctx.fillStyle = 'black';
-        this.ctx.fillText('Verde: 15 pts', startX + 25, 60);
+        this.ctx.fillText('Verde: 15 pts', textStartX, startY + 55);
         
         // Amarillo
         this.ctx.fillStyle = 'yellow';
         this.ctx.beginPath();
-        this.ctx.arc(startX + circleRadius, 85, circleRadius, 0, Math.PI * 2);
+        this.ctx.arc(circleStartX + circleRadius, startY + 85, circleRadius, 0, Math.PI * 2);
         this.ctx.fill();
         this.ctx.fillStyle = 'black';
-        this.ctx.fillText('Amarillo: 10 pts', startX + 25, 90);
+        this.ctx.fillText('Amarillo: 10 pts', textStartX, startY + 90);
         
         // Naranja
         this.ctx.fillStyle = 'orange';
         this.ctx.beginPath();
-        this.ctx.arc(startX + circleRadius, 115, circleRadius, 0, Math.PI * 2);
+        this.ctx.arc(circleStartX + circleRadius, startY + 120, circleRadius, 0, Math.PI * 2);
         this.ctx.fill();
         this.ctx.fillStyle = 'black';
-        this.ctx.fillText('Naranja: 5 pts', startX + 25, 120);
+        this.ctx.fillText('Naranja: 5 pts', textStartX, startY + 125);
         
         // Rojo
         this.ctx.fillStyle = 'red';
         this.ctx.beginPath();
-        this.ctx.arc(startX + circleRadius, 145, circleRadius, 0, Math.PI * 2);
+        this.ctx.arc(circleStartX + circleRadius, startY + 155, circleRadius, 0, Math.PI * 2);
         this.ctx.fill();
         this.ctx.fillStyle = 'black';
-        this.ctx.fillText('Rojo: 0 pts', startX + 25, 150);
+        this.ctx.fillText('Rojo: 0 pts', textStartX, startY + 160);
     }
 
     private draw() {
@@ -481,9 +469,11 @@ export class Game {
         const currentColor = this.trafficLightColors[this.currentColorIndex];
 
         if (currentColor === 'red') {
-            // Si salta en rojo, el perro se cae y pierde
+            // Si salta en rojo, el perro se cae y termina el juego después de la animación
             this.dog.failJump();
-            this.gameOver = true;
+            setTimeout(() => {
+                this.gameOver = true;
+            }, 1000); // Esperar a que se complete la animación de caída
             return;
         }
 
@@ -558,18 +548,8 @@ export class Game {
         this.gameLoopId = requestAnimationFrame(gameLoop);
     }
 
-    public setTrainerName(name: string) {
-        this.trainerName = name;
-    }
-
-    public setTotalHurdles(total: number) {
-        this.cleanup(); // Limpiar el estado anterior
-        this.totalHurdles = total;
-        this.initializeGame();
-    }
-
     private createNewHurdle() {
-        const hurdleX = 500; // Posición fija para la valla
+        const hurdleX = 500;
         this.hurdle = new Hurdle(hurdleX, this.canvas.height - 120);
     }
 }
