@@ -12,6 +12,7 @@ export class Game {
     private currentHurdle: number = 1;
     private gameOver: boolean = false;
     private boundKeydownHandler: (e: KeyboardEvent) => void;
+    private boundClickHandler: (e: MouseEvent) => void;
     private gameLoopId: number | null = null;
     private trafficLightColors: string[] = ['red'];
     private currentColorIndex: number = 0;
@@ -30,11 +31,13 @@ export class Game {
         'orange': 5,
         'green': 15
     };
+    private showHurdle: boolean = false;
 
     constructor(canvasId: string) {
         this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
         this.ctx = this.canvas.getContext('2d')!;
         this.boundKeydownHandler = this.handleKeydown.bind(this);
+        this.boundClickHandler = this.handleClick.bind(this);
         this.initializeClouds();
         this.initializeGrassAndFlowers();
         this.initializeGame();
@@ -77,6 +80,7 @@ export class Game {
 
     private cleanup() {
         document.removeEventListener('keydown', this.boundKeydownHandler);
+        this.canvas.removeEventListener('click', this.boundClickHandler);
         if (this.gameLoopId !== null) {
             cancelAnimationFrame(this.gameLoopId);
             this.gameLoopId = null;
@@ -97,16 +101,16 @@ export class Game {
         this.lastColorChangeTime = 0;
         this.canJump = false;
         this.terrainOffset = 0;
+        this.showHurdle = false;
 
         // Reiniciar elementos del juego
         this.generateColorSequence();
         this.dog = new Dog(100, this.canvas.height - 100);
         this.createNewHurdle();
         
-        // Esperar un momento antes de habilitar los controles
-        setTimeout(() => {
-            document.addEventListener('keydown', this.boundKeydownHandler);
-        }, 1000);
+        // Agregar los event listeners
+        document.addEventListener('keydown', this.boundKeydownHandler);
+        this.canvas.addEventListener('click', this.boundClickHandler);
 
         this.startGame();
     }
@@ -223,6 +227,7 @@ export class Game {
                               currentColor === 'yellow' || 
                               currentColor === 'orange';
             } else if (!this.isJumping && !this.gameOver) {
+                this.showHurdle = true;
                 this.isJumping = true;
                 this.dog.failJump();
                 setTimeout(() => {
@@ -231,7 +236,6 @@ export class Game {
                         this.generateColorSequence();
                         this.currentColorIndex = 0;
                         this.lastColorChangeTime = currentTime;
-                        this.isJumping = false;
                     } else {
                         this.gameOver = true;
                     }
@@ -391,9 +395,13 @@ export class Game {
         // Dibujar el semáforo
         this.drawTrafficLight();
 
-        // Dibujar el perro y la valla
+        // Dibujar el perro
         this.dog.draw(this.ctx);
-        this.hurdle.draw(this.ctx);
+
+        // Dibujar la valla solo si showHurdle es true
+        if (this.showHurdle) {
+            this.hurdle.draw(this.ctx);
+        }
 
         // Panel de información del juego (izquierda)
         this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
@@ -443,6 +451,16 @@ export class Game {
         }
     }
 
+    private handleClick(e: MouseEvent) {
+        if (this.gameOver) {
+            this.initializeGame();
+        } else if (!this.isJumping) {
+            this.jump();
+        }
+        // Prevenir comportamientos por defecto
+        e.preventDefault();
+    }
+
     private handleKeydown(e: KeyboardEvent) {
         // Evitar que el evento se procese múltiples veces
         if (e.repeat) return;
@@ -451,7 +469,6 @@ export class Game {
             if (this.gameOver) {
                 this.initializeGame();
             } else if (!this.isJumping) {
-                // Permitir el salto en cualquier color, pero las consecuencias se manejan en jump()
                 this.jump();
             }
             // Prevenir el comportamiento por defecto del espacio
@@ -464,6 +481,7 @@ export class Game {
         
         this.isJumping = true;
         this.canJump = false;
+        this.showHurdle = true;
         
         // Obtener el color actual del semáforo
         const currentColor = this.trafficLightColors[this.currentColorIndex];
@@ -551,5 +569,6 @@ export class Game {
     private createNewHurdle() {
         const hurdleX = 500;
         this.hurdle = new Hurdle(hurdleX, this.canvas.height - 120);
+        this.showHurdle = false;
     }
 }
