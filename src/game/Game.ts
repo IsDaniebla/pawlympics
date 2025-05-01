@@ -199,8 +199,7 @@ export class Game {
         }
         
         this.currentHurdle++;
-        this.dog.reset(this.DOG_X);
-        // Mantener la valla actual moviéndose con su velocidad normal
+        this.dog.reset(this.dog.getX());
         this.isTransitioning = true;
         this.nextHurdleReady = false;
         this.isJumping = false;

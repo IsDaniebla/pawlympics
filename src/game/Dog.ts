@@ -24,8 +24,8 @@ export class Dog {
     private jumpDuration: number = 40; // Reducida aún más la duración del salto
     private recoveryTimer: number = 0;
     private isRecovering: boolean = false;
-    private readonly RECOVERY_DELAY: number = 30; // Reducido de 60 a 30 frames
-    private readonly RECOVERY_DURATION: number = 45; // Aumentado de 30 a 45 frames para una recuperación más suave
+    private readonly RECOVERY_DELAY: number = 30;
+    private readonly RECOVERY_DURATION: number = 45;
 
     constructor(x: number, y: number) {
         this.x = x;
@@ -43,12 +43,12 @@ export class Dog {
         this.baseX = x;
     }
 
-    private startJump(verticalVelocity: number, hurdleX: number) {
+    private startJump(verticalVelocity: number, targetX: number) {
         this.jumpVelocity = verticalVelocity;
         this.jumpHeight = 0;
         this.isJumping = true;
         this.jumpStartX = this.x;
-        this.targetX = hurdleX;
+        this.targetX = targetX;
         this.jumpProgress = 0;
     }
 
@@ -66,12 +66,13 @@ export class Dog {
     }
 
     public failJump(hurdleX: number) {
-        this.startJump(-5, hurdleX);
+        this.startJump(-5, hurdleX + 100);
         this.isStumbling = true;
         this.rotationAngle = 0;
         this.happiness = 0.7;
         this.recoveryTimer = 0;
         this.isRecovering = false;
+        this.baseX = hurdleX + 100;
     }
 
     public reset(x: number) {
@@ -117,7 +118,6 @@ export class Dog {
         if (this.isJumping) {
             this.jumpProgress++;
             
-            // Calcular la posición en la parábola
             const progress = this.jumpProgress / this.jumpDuration;
             const jumpDistance = this.targetX - this.jumpStartX;
             
@@ -128,7 +128,6 @@ export class Dog {
             const verticalProgress = progress * 2 - 1; // -1 a 1
             this.jumpHeight = -75 * (1 - (verticalProgress * verticalProgress)); // Altura ajustada
             
-            // Verificar si el salto ha terminado
             if (this.jumpProgress >= this.jumpDuration) {
                 this.isJumping = false;
                 this.jumpHeight = 0;
@@ -136,7 +135,7 @@ export class Dog {
             }
         }
 
-        // Actualizar animaciones con movimientos más sutiles
+        // Actualizar animaciones
         this.tailWag += 0.2;
         this.earWiggle += 0.1;
         this.legPhase += 0.3;
@@ -155,7 +154,7 @@ export class Dog {
             }
         }
 
-        // Actualizar lengua con movimiento más suave
+        // Actualizar lengua
         if (this.tongueOut > 0) {
             this.tongueOut -= 0.01;
         }
@@ -168,24 +167,21 @@ export class Dog {
                     this.rotationAngle = Math.PI / 2;
                     this.recoveryTimer++;
                     
-                    // Iniciar recuperación después del delay
                     if (this.recoveryTimer >= this.RECOVERY_DELAY) {
                         this.isRecovering = true;
                         this.recoveryTimer = 0;
                     }
                 }
             } else {
-                // Animación de recuperación
                 this.recoveryTimer++;
                 const recoveryProgress = this.recoveryTimer / this.RECOVERY_DURATION;
                 this.rotationAngle = Math.PI / 2 * (1 - recoveryProgress);
                 
-                // Terminar la recuperación
                 if (this.recoveryTimer >= this.RECOVERY_DURATION) {
                     this.isStumbling = false;
                     this.isRecovering = false;
                     this.rotationAngle = 0;
-                    this.happiness = 0.9; // Un poco triste aún
+                    this.happiness = 0.9;
                 }
             }
         }
@@ -320,14 +316,14 @@ export class Dog {
                     backRight: Math.PI / 3 * fallProgress
                 };
             } else {
-                // Durante la recuperación, las patas vuelven a su posición gradualmente
+                // Durante la recuperación, las patas vuelven a su posición normal con un ligero movimiento
                 const recoveryProgress = this.recoveryTimer / this.RECOVERY_DURATION;
-                const baseAngle = Math.PI / 4 * (1 - recoveryProgress);
+                const walkPhase = Math.sin(this.legPhase) * 0.2;
                 return {
-                    frontLeft: -baseAngle + Math.sin(this.legPhase) * 0.2,
-                    frontRight: baseAngle + Math.sin(this.legPhase) * 0.2,
-                    backLeft: -baseAngle + Math.sin(this.legPhase + Math.PI) * 0.2,
-                    backRight: baseAngle + Math.sin(this.legPhase + Math.PI) * 0.2
+                    frontLeft: walkPhase,
+                    frontRight: -walkPhase,
+                    backLeft: -walkPhase,
+                    backRight: walkPhase
                 };
             }
         } else if (this.isJumping) {
@@ -339,7 +335,7 @@ export class Dog {
                 backRight: Math.PI / 6
             };
         } else {
-            // Movimiento normal
+            // Movimiento normal de caminata
             const baseMovement = Math.sin(this.legPhase) * 0.3;
             return {
                 frontLeft: baseMovement,
