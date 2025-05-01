@@ -22,6 +22,10 @@ export class Dog {
     private jumpStartX: number = 0;
     private jumpProgress: number = 0;
     private jumpDuration: number = 40; // Reducida aún más la duración del salto
+    private recoveryTimer: number = 0;
+    private isRecovering: boolean = false;
+    private readonly RECOVERY_DELAY: number = 30; // Reducido de 60 a 30 frames
+    private readonly RECOVERY_DURATION: number = 45; // Aumentado de 30 a 45 frames para una recuperación más suave
 
     constructor(x: number, y: number) {
         this.x = x;
@@ -66,6 +70,8 @@ export class Dog {
         this.isStumbling = true;
         this.rotationAngle = 0;
         this.happiness = 0.7;
+        this.recoveryTimer = 0;
+        this.isRecovering = false;
     }
 
     public reset(x: number) {
@@ -79,6 +85,8 @@ export class Dog {
         this.happiness = 1;
         this.isJumping = false;
         this.jumpProgress = 0;
+        this.recoveryTimer = 0;
+        this.isRecovering = false;
     }
 
     private drawLeg(ctx: CanvasRenderingContext2D, x: number, y: number, angle: number) {
@@ -152,11 +160,33 @@ export class Dog {
             this.tongueOut -= 0.01;
         }
 
-        // Actualizar tropiezo
+        // Actualizar tropiezo y recuperación
         if (this.isStumbling) {
-            this.rotationAngle += 0.2;
-            if (this.rotationAngle >= Math.PI / 2) {
-                this.rotationAngle = Math.PI / 2;
+            if (!this.isRecovering) {
+                this.rotationAngle += 0.2;
+                if (this.rotationAngle >= Math.PI / 2) {
+                    this.rotationAngle = Math.PI / 2;
+                    this.recoveryTimer++;
+                    
+                    // Iniciar recuperación después del delay
+                    if (this.recoveryTimer >= this.RECOVERY_DELAY) {
+                        this.isRecovering = true;
+                        this.recoveryTimer = 0;
+                    }
+                }
+            } else {
+                // Animación de recuperación
+                this.recoveryTimer++;
+                const recoveryProgress = this.recoveryTimer / this.RECOVERY_DURATION;
+                this.rotationAngle = Math.PI / 2 * (1 - recoveryProgress);
+                
+                // Terminar la recuperación
+                if (this.recoveryTimer >= this.RECOVERY_DURATION) {
+                    this.isStumbling = false;
+                    this.isRecovering = false;
+                    this.rotationAngle = 0;
+                    this.happiness = 0.9; // Un poco triste aún
+                }
             }
         }
 
@@ -186,14 +216,12 @@ export class Dog {
         ctx.fill();
         ctx.restore();
 
-        // Patas
-        if (!this.isStumbling) {
-            const legMovement = this.jumpVelocity === 0 ? Math.sin(this.legPhase) * 0.3 : Math.PI / 6;
-            this.drawLeg(ctx, -15, 15, legMovement);
-            this.drawLeg(ctx, 15, 15, -legMovement);
-            this.drawLeg(ctx, -5, 15, -legMovement);
-            this.drawLeg(ctx, 20, 15, legMovement);
-        }
+        // Patas - Ahora siempre se dibujan, con movimientos diferentes según el estado
+        const legMovement = this.calculateLegMovement();
+        this.drawLeg(ctx, -15, 15, legMovement.frontLeft);
+        this.drawLeg(ctx, 15, 15, legMovement.frontRight);
+        this.drawLeg(ctx, -5, 15, legMovement.backLeft);
+        this.drawLeg(ctx, 20, 15, legMovement.backRight);
 
         // Cuerpo
         ctx.fillStyle = '#8B4513';
@@ -278,5 +306,51 @@ export class Dog {
 
         ctx.restore();
         ctx.restore();
+    }
+
+    private calculateLegMovement() {
+        if (this.isStumbling) {
+            if (!this.isRecovering) {
+                // Durante la caída, las patas se mueven hacia arriba gradualmente
+                const fallProgress = this.rotationAngle / (Math.PI / 2);
+                return {
+                    frontLeft: -Math.PI / 4 * fallProgress,
+                    frontRight: Math.PI / 4 * fallProgress,
+                    backLeft: -Math.PI / 3 * fallProgress,
+                    backRight: Math.PI / 3 * fallProgress
+                };
+            } else {
+                // Durante la recuperación, las patas vuelven a su posición gradualmente
+                const recoveryProgress = this.recoveryTimer / this.RECOVERY_DURATION;
+                const baseAngle = Math.PI / 4 * (1 - recoveryProgress);
+                return {
+                    frontLeft: -baseAngle + Math.sin(this.legPhase) * 0.2,
+                    frontRight: baseAngle + Math.sin(this.legPhase) * 0.2,
+                    backLeft: -baseAngle + Math.sin(this.legPhase + Math.PI) * 0.2,
+                    backRight: baseAngle + Math.sin(this.legPhase + Math.PI) * 0.2
+                };
+            }
+        } else if (this.isJumping) {
+            // Durante el salto
+            return {
+                frontLeft: Math.PI / 6,
+                frontRight: -Math.PI / 6,
+                backLeft: -Math.PI / 6,
+                backRight: Math.PI / 6
+            };
+        } else {
+            // Movimiento normal
+            const baseMovement = Math.sin(this.legPhase) * 0.3;
+            return {
+                frontLeft: baseMovement,
+                frontRight: -baseMovement,
+                backLeft: -baseMovement,
+                backRight: baseMovement
+            };
+        }
+    }
+
+    public isInRecovery(): boolean {
+        return this.isStumbling || this.isRecovering;
     }
 } 

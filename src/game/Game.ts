@@ -17,7 +17,7 @@ export class Game {
     private trafficLightColors: string[] = ['red'];
     private currentColorIndex: number = 0;
     private lastColorChangeTime: number = 0;
-    private colorChangeDuration: number = 1000;
+    private colorChangeDuration: number = 800;
     private terrainOffset: number = 0;
     private readonly terrainSpeed: number = 2;
     private clouds: Array<{x: number, y: number, width: number}> = [];
@@ -31,7 +31,7 @@ export class Game {
         'green': 15
     };
     private showHurdle: boolean = false;
-    private readonly INITIAL_HURDLE_X: number = 500;
+    private readonly INITIAL_HURDLE_X: number = 600;
     private readonly DOG_X: number = 150;
     private hurdleSpeed: number = 0;
     private baseHurdleSpeed: number = 0;
@@ -51,8 +51,11 @@ export class Game {
     private readonly JUMP_DETECTION_DISTANCE: number = 100;
     private readonly JUMP_LANDING_OFFSET: number = 25;
     private isFailedJump: boolean = false;
-    private readonly MIN_FLOWERS: number = 30; // Número mínimo de flores
-    private readonly FLOWER_SPACING: number = 50; // Espacio aproximado entre flores
+    private readonly MIN_FLOWERS: number = 30;
+    private readonly FLOWER_SPACING: number = 50;
+    private isTransitioning: boolean = false;
+    private nextHurdleReady: boolean = false;
+    private readonly TRANSITION_SPEED: number = 3;
 
     constructor(canvasId: string) {
         this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
@@ -109,21 +112,20 @@ export class Game {
         this.flowers = [];
         const flowerColors = ['#FF69B4', '#FFB6C1', '#FFA07A', '#98FB98', '#87CEEB', '#DDA0DD'];
         
-        // Distribuir flores uniformemente a lo largo del canvas
-        for (let x = 0; x < this.canvas.width + 200; x += this.FLOWER_SPACING) {
-            const randomOffset = Math.random() * 30 - 15; // Offset aleatorio para que no se vean en línea recta
+        // Distribuir flores por todo el canvas desde el inicio
+        for (let x = 0; x < this.canvas.width + 100; x += 30) {
             this.flowers.push({
-                x: x + randomOffset,
+                x: x,
                 y: this.canvas.height - 90 + Math.random() * 20,
                 color: flowerColors[Math.floor(Math.random() * flowerColors.length)],
                 size: Math.random() * 3 + 2
             });
         }
 
-        // Añadir algunas flores adicionales en posiciones aleatorias
-        while (this.flowers.length < this.MIN_FLOWERS) {
+        // Añadir flores adicionales para más densidad
+        for (let i = 0; i < 15; i++) {
             this.flowers.push({
-                x: Math.random() * (this.canvas.width + 200),
+                x: Math.random() * this.canvas.width,
                 y: this.canvas.height - 90 + Math.random() * 20,
                 color: flowerColors[Math.floor(Math.random() * flowerColors.length)],
                 size: Math.random() * 3 + 2
@@ -150,6 +152,8 @@ export class Game {
         this.gameOver = false;
         this.isJumping = false;
         this.isFailedJump = false;
+        this.isTransitioning = false;
+        this.nextHurdleReady = false;
         this.trafficLightColors = ['red'];
         this.currentColorIndex = 0;
         this.lastColorChangeTime = 0;
@@ -158,10 +162,11 @@ export class Game {
         this.isTrafficLightStopped = false;
         this.hasClickedThisHurdle = false;
 
-        // Reiniciar elementos del juego
+        // Reinicializar elementos del juego
         this.generateColorSequence();
         this.dog = new Dog(this.DOG_X, this.canvas.height - 100);
         this.createNewHurdle();
+        this.initializeGrassAndFlowers();
         
         // Agregar los event listeners
         document.addEventListener('keydown', this.boundKeydownHandler);
@@ -195,7 +200,9 @@ export class Game {
         
         this.currentHurdle++;
         this.dog.reset(this.DOG_X);
-        this.createNewHurdle();
+        // Mantener la valla actual moviéndose con su velocidad normal
+        this.isTransitioning = true;
+        this.nextHurdleReady = false;
         this.isJumping = false;
         this.isTrafficLightStopped = false;
         this.hasClickedThisHurdle = false;
@@ -663,38 +670,69 @@ export class Game {
     }
 
     private createNewHurdle() {
-        this.hurdle = new Hurdle(this.INITIAL_HURDLE_X, this.canvas.height - 90);
+        if (this.isTransitioning && this.nextHurdleReady) {
+            // Durante la transición, crear la valla en el lado derecho
+            this.hurdle = new Hurdle(this.canvas.width + 50, this.canvas.height - 90);
+        } else {
+            // Para la primera valla o al iniciar el juego, usar la posición inicial
+            this.hurdle = new Hurdle(this.INITIAL_HURDLE_X, this.canvas.height - 90);
+        }
+        
         // Calcular la velocidad base basada en la duración del semáforo y la distancia
         const totalDistance = this.INITIAL_HURDLE_X - this.DOG_X;
         const totalTime = this.colorChangeDuration * this.trafficLightColors.length;
         this.baseHurdleSpeed = totalDistance / totalTime;
-        this.hurdleSpeed = this.baseHurdleSpeed;
+        
+        // Si estamos en transición y es la nueva valla, usar la velocidad base
+        if (this.isTransitioning && this.nextHurdleReady) {
+            this.hurdleSpeed = this.baseHurdleSpeed;
+        } else {
+            this.hurdleSpeed = this.baseHurdleSpeed;
+        }
     }
 
     private updateHurdlePosition(deltaTime: number) {
         if (this.gameOver) return;
 
         const currentX = this.hurdle.getX();
-        const newX = currentX - (this.hurdleSpeed * deltaTime);
-        this.hurdle.setX(newX);
+        let newX = currentX;
 
-        // Comenzar el salto cuando la valla esté más lejos
-        if (!this.isJumping && Math.abs(newX - this.DOG_X) < this.JUMP_DETECTION_DISTANCE) {
-            this.evaluateJump();
-        }
-
-        // Si la valla ha salido completamente de la pantalla
-        if (newX < -50) {
-            if (this.currentHurdle >= this.totalHurdles) {
-                this.gameOver = true;
+        if (this.isTransitioning) {
+            if (!this.nextHurdleReady) {
+                // Continuar con la velocidad que tenía la valla
+                newX = currentX - (this.hurdleSpeed * deltaTime);
+                
+                // Si la valla actual ha salido completamente de la pantalla
+                if (newX < -100) { // Aumentado para asegurar que salga completamente
+                    // Preparar la nueva valla en el lado derecho
+                    this.createNewHurdle();
+                    this.nextHurdleReady = true;
+                }
             } else {
-                this.nextHurdle();
+                // Mover la nueva valla hacia su posición inicial con la velocidad base
+                newX = currentX - (this.baseHurdleSpeed * deltaTime);
+                
+                // Si la nueva valla está cerca de su posición inicial
+                if (newX <= this.INITIAL_HURDLE_X) {
+                    this.isTransitioning = false;
+                    newX = this.INITIAL_HURDLE_X;
+                }
+            }
+        } else if (!this.isFailedJump) {
+            // Movimiento normal de la valla durante el juego
+            newX = currentX - (this.hurdleSpeed * deltaTime);
+            
+            // Comenzar el salto cuando la valla esté más lejos y el perro no esté en recuperación
+            if (!this.isJumping && !this.dog.isInRecovery() && Math.abs(newX - this.DOG_X) < this.JUMP_DETECTION_DISTANCE) {
+                this.evaluateJump();
             }
         }
+
+        this.hurdle.setX(newX);
     }
 
     private evaluateJump() {
-        if (this.gameOver || this.isJumping) return;
+        if (this.gameOver || this.isJumping || this.dog.isInRecovery()) return;
 
         this.isJumping = true;
         const hurdleX = this.hurdle.getX();
@@ -734,14 +772,21 @@ export class Game {
     }
 
     private handleFailedJump() {
-        // Esperar un momento y continuar con la siguiente valla
-        setTimeout(() => {
-            if (this.currentHurdle >= this.totalHurdles) {
-                this.gameOver = true;
+        // Esperar a que el perro se recupere completamente antes de continuar
+        const checkRecovery = () => {
+            if (this.dog.isInRecovery()) {
+                setTimeout(checkRecovery, 100);
             } else {
-                this.nextHurdle();
+                if (this.currentHurdle >= this.totalHurdles) {
+                    this.gameOver = true;
+                } else {
+                    // Iniciar la transición a la siguiente valla
+                    this.nextHurdle();
+                }
             }
-        }, 1000); // Reducido el tiempo de espera a 1 segundo
+        };
+        
+        setTimeout(checkRecovery, 500);
     }
 
     private handleJumpResult(isSuccess: boolean) {
