@@ -56,6 +56,8 @@ export class Game {
     private isTransitioning: boolean = false;
     private nextHurdleReady: boolean = false;
     private readonly TRANSITION_SPEED: number = 3;
+    private hurdleReturnStartX: number = 0;
+    private hurdleReturnDistance: number = 0;
 
     constructor(canvasId: string) {
         this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
@@ -630,8 +632,8 @@ export class Game {
 
             this.dog.update();
             
-            // Solo actualizar la posición de la valla y el terreno si no ha fallado el salto
-            if (!this.isFailedJump) {
+            // Solo actualizar el terreno y la valla si el perro no está en recuperación
+            if (!this.dog.isInRecovery()) {
                 this.updateHurdlePosition(deltaTime);
                 this.terrainOffset += this.terrainSpeed;
             }
@@ -698,30 +700,26 @@ export class Game {
 
         if (this.isTransitioning) {
             if (!this.nextHurdleReady) {
-                // Continuar con la velocidad que tenía la valla
                 newX = currentX - (this.hurdleSpeed * deltaTime);
                 
-                // Si la valla actual ha salido completamente de la pantalla
-                if (newX < -100) { // Aumentado para asegurar que salga completamente
-                    // Preparar la nueva valla en el lado derecho
+                if (newX < -100) {
                     this.createNewHurdle();
                     this.nextHurdleReady = true;
                 }
             } else {
-                // Mover la nueva valla hacia su posición inicial con la velocidad base
                 newX = currentX - (this.baseHurdleSpeed * deltaTime);
                 
-                // Si la nueva valla está cerca de su posición inicial
                 if (newX <= this.INITIAL_HURDLE_X) {
                     this.isTransitioning = false;
                     newX = this.INITIAL_HURDLE_X;
                 }
             }
         } else if (!this.isFailedJump) {
-            // Movimiento normal de la valla durante el juego
-            newX = currentX - (this.hurdleSpeed * deltaTime);
+            // Mover la valla cuando el perro está caminando (no en recuperación)
+            if (!this.dog.isInRecovery()) {
+                newX = currentX - (this.hurdleSpeed * deltaTime);
+            }
             
-            // Comenzar el salto cuando la valla esté más lejos y el perro no esté en recuperación
             if (!this.isJumping && !this.dog.isInRecovery() && Math.abs(newX - this.DOG_X) < this.JUMP_DETECTION_DISTANCE) {
                 this.evaluateJump();
             }
@@ -771,7 +769,6 @@ export class Game {
     }
 
     private handleFailedJump() {
-        // Esperar a que el perro se recupere completamente antes de continuar
         const checkRecovery = () => {
             if (this.dog.isInRecovery()) {
                 setTimeout(checkRecovery, 100);
@@ -779,7 +776,7 @@ export class Game {
                 if (this.currentHurdle >= this.totalHurdles) {
                     this.gameOver = true;
                 } else {
-                    // Iniciar la transición a la siguiente valla
+                    // Cuando el perro se recupera, todo vuelve a moverse
                     this.nextHurdle();
                 }
             }

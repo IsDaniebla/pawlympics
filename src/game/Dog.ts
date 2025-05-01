@@ -26,12 +26,17 @@ export class Dog {
     private isRecovering: boolean = false;
     private readonly RECOVERY_DELAY: number = 30;
     private readonly RECOVERY_DURATION: number = 45;
+    private isReturning: boolean = false;
+    private returnSpeed: number = 2;
+    private targetReturnX: number = 0;
+    private readonly INITIAL_X: number = 150;
 
     constructor(x: number, y: number) {
         this.x = x;
         this.baseX = x;
         this.y = y;
         this.baseY = y;
+        this.INITIAL_X = x; // Guardar la posición inicial
     }
 
     public getX(): number {
@@ -72,7 +77,7 @@ export class Dog {
         this.happiness = 0.7;
         this.recoveryTimer = 0;
         this.isRecovering = false;
-        this.baseX = hurdleX + 100;
+        this.baseX = this.x; // Mantener la posición actual como base
     }
 
     public reset(x: number) {
@@ -121,45 +126,19 @@ export class Dog {
             const progress = this.jumpProgress / this.jumpDuration;
             const jumpDistance = this.targetX - this.jumpStartX;
             
-            // Movimiento horizontal
             this.x = this.jumpStartX + (jumpDistance * progress);
             
-            // Movimiento vertical (parábola ajustada)
-            const verticalProgress = progress * 2 - 1; // -1 a 1
-            this.jumpHeight = -75 * (1 - (verticalProgress * verticalProgress)); // Altura ajustada
+            const verticalProgress = progress * 2 - 1;
+            this.jumpHeight = -75 * (1 - (verticalProgress * verticalProgress));
             
             if (this.jumpProgress >= this.jumpDuration) {
                 this.isJumping = false;
                 this.jumpHeight = 0;
                 this.x = this.targetX;
+                this.baseX = this.x; // Actualizar la posición base
             }
         }
 
-        // Actualizar animaciones
-        this.tailWag += 0.2;
-        this.earWiggle += 0.1;
-        this.legPhase += 0.3;
-        
-        // Parpadeo aleatorio
-        this.blinkTimer++;
-        if (this.blinkTimer > 100 && Math.random() < 0.02) {
-            this.isBlinking = true;
-            this.blinkTimer = 0;
-        }
-        if (this.isBlinking) {
-            this.eyeBlink += 0.5;
-            if (this.eyeBlink >= Math.PI) {
-                this.eyeBlink = 0;
-                this.isBlinking = false;
-            }
-        }
-
-        // Actualizar lengua
-        if (this.tongueOut > 0) {
-            this.tongueOut -= 0.01;
-        }
-
-        // Actualizar tropiezo y recuperación
         if (this.isStumbling) {
             if (!this.isRecovering) {
                 this.rotationAngle += 0.2;
@@ -182,13 +161,33 @@ export class Dog {
                     this.isRecovering = false;
                     this.rotationAngle = 0;
                     this.happiness = 0.9;
+                    // No iniciamos el retorno, el perro se queda donde está
                 }
             }
         }
 
-        // Normalizar felicidad más suavemente
-        if (this.happiness > 1) this.happiness -= 0.005;
-        if (this.happiness < 1) this.happiness += 0.005;
+        // Actualizar animaciones
+        this.tailWag += 0.2;
+        this.earWiggle += 0.1;
+        this.legPhase += 0.3;
+        
+        // Parpadeo aleatorio
+        this.blinkTimer++;
+        if (this.blinkTimer > 100 && Math.random() < 0.02) {
+            this.isBlinking = true;
+            this.blinkTimer = 0;
+        }
+        if (this.isBlinking) {
+            this.eyeBlink += 0.5;
+            if (this.eyeBlink >= Math.PI) {
+                this.eyeBlink = 0;
+                this.isBlinking = false;
+            }
+        }
+
+        if (this.tongueOut > 0) {
+            this.tongueOut -= 0.01;
+        }
     }
 
     public draw(ctx: CanvasRenderingContext2D) {
@@ -344,6 +343,19 @@ export class Dog {
                 backRight: baseMovement
             };
         }
+    }
+
+    private startReturn() {
+        this.isReturning = true;
+        this.targetReturnX = this.INITIAL_X;
+    }
+
+    public isInReturnState(): boolean {
+        return this.isReturning;
+    }
+
+    public getReturnSpeed(): number {
+        return this.returnSpeed;
     }
 
     public isInRecovery(): boolean {
