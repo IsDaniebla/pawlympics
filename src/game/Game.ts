@@ -248,13 +248,13 @@ export class Game {
         this.ctx.strokeStyle = '#FFFFFF';
         this.ctx.lineWidth = 3;
         
-        // Dibujar líneas discontinuas con movimiento
+        // Dibujar líneas discontinuas con movimiento invertido
         const lineLength = 30;
         const lineGap = 40;
         const totalLength = lineLength + lineGap;
         
-        // Asegurarse de que siempre haya suficientes líneas visibles
-        for (let x = -totalLength + (this.terrainOffset % totalLength); x < this.canvas.width + totalLength; x += totalLength) {
+        // Invertir la dirección del movimiento usando el terrainOffset negativo
+        for (let x = -totalLength - (this.terrainOffset % totalLength); x < this.canvas.width + totalLength; x += totalLength) {
             this.ctx.beginPath();
             this.ctx.moveTo(x, pathY + 20);
             this.ctx.lineTo(x + lineLength, pathY + 20);
