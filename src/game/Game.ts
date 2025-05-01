@@ -32,7 +32,7 @@ export class Game {
     };
     private showHurdle: boolean = false;
     private readonly INITIAL_HURDLE_X: number = 500;
-    private readonly DOG_X: number = 100;
+    private readonly DOG_X: number = 150;
     private hurdleSpeed: number = 0;
     private baseHurdleSpeed: number = 0;
     private readonly SPEED_MULTIPLIER: number = 2.5;
@@ -623,7 +623,7 @@ export class Game {
     }
 
     private createNewHurdle() {
-        this.hurdle = new Hurdle(this.INITIAL_HURDLE_X, this.canvas.height - 120);
+        this.hurdle = new Hurdle(this.INITIAL_HURDLE_X, this.canvas.height - 90);
         // Calcular la velocidad base basada en la duración del semáforo y la distancia
         const totalDistance = this.INITIAL_HURDLE_X - this.DOG_X;
         const totalTime = this.colorChangeDuration * this.trafficLightColors.length;
@@ -639,8 +639,8 @@ export class Game {
             const newX = currentX - (this.hurdleSpeed * deltaTime);
             this.hurdle.setX(Math.max(newX, this.DOG_X));
 
-            // Cuando la valla llega al perro
-            if (Math.abs(newX - this.DOG_X) < 5) {
+            // Comenzar el salto cuando la valla esté más lejos
+            if (Math.abs(newX - this.DOG_X) < 40) { // Aumentado de 5 a 40 para comenzar el salto antes
                 this.evaluateJump();
             }
         }
