@@ -51,6 +51,8 @@ export class Game {
     private readonly JUMP_DETECTION_DISTANCE: number = 100;
     private readonly JUMP_LANDING_OFFSET: number = 25;
     private isFailedJump: boolean = false;
+    private readonly MIN_FLOWERS: number = 30; // Número mínimo de flores
+    private readonly FLOWER_SPACING: number = 50; // Espacio aproximado entre flores
 
     constructor(canvasId: string) {
         this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
@@ -106,9 +108,22 @@ export class Game {
         // Inicializar flores
         this.flowers = [];
         const flowerColors = ['#FF69B4', '#FFB6C1', '#FFA07A', '#98FB98', '#87CEEB', '#DDA0DD'];
-        for (let i = 0; i < 30; i++) {
+        
+        // Distribuir flores uniformemente a lo largo del canvas
+        for (let x = 0; x < this.canvas.width + 200; x += this.FLOWER_SPACING) {
+            const randomOffset = Math.random() * 30 - 15; // Offset aleatorio para que no se vean en línea recta
             this.flowers.push({
-                x: Math.random() * this.canvas.width,
+                x: x + randomOffset,
+                y: this.canvas.height - 90 + Math.random() * 20,
+                color: flowerColors[Math.floor(Math.random() * flowerColors.length)],
+                size: Math.random() * 3 + 2
+            });
+        }
+
+        // Añadir algunas flores adicionales en posiciones aleatorias
+        while (this.flowers.length < this.MIN_FLOWERS) {
+            this.flowers.push({
+                x: Math.random() * (this.canvas.width + 200),
                 y: this.canvas.height - 90 + Math.random() * 20,
                 color: flowerColors[Math.floor(Math.random() * flowerColors.length)],
                 size: Math.random() * 3 + 2
@@ -389,16 +404,31 @@ export class Game {
     }
 
     private drawFlowers() {
+        const flowerColors = ['#FF69B4', '#FFB6C1', '#FFA07A', '#98FB98', '#87CEEB', '#DDA0DD'];
+        
         for (const flower of this.flowers) {
             let adjustedX = flower.x - this.terrainOffset;
             
+            // Si la flor sale por la izquierda, reposicionarla a la derecha
             if (adjustedX < -20) {
                 flower.x += this.canvas.width + 40;
                 flower.y = this.canvas.height - 90 + Math.random() * 20;
+                flower.color = flowerColors[Math.floor(Math.random() * flowerColors.length)];
+                flower.size = Math.random() * 3 + 2;
                 adjustedX = flower.x - this.terrainOffset;
             }
             
-            // Tallo de la flor más alto
+            // Asegurarse de que siempre haya suficientes flores
+            if (this.flowers.length < this.MIN_FLOWERS) {
+                this.flowers.push({
+                    x: this.canvas.width + Math.random() * 200,
+                    y: this.canvas.height - 90 + Math.random() * 20,
+                    color: flowerColors[Math.floor(Math.random() * flowerColors.length)],
+                    size: Math.random() * 3 + 2
+                });
+            }
+            
+            // Tallo de la flor
             this.ctx.strokeStyle = '#228B22';
             this.ctx.lineWidth = 1;
             this.ctx.beginPath();
