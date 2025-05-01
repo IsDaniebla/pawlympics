@@ -80,6 +80,107 @@
       label {
         color: #333;
       }
+      .audio-controls {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column-reverse;
+        align-items: center;
+        gap: 10px;
+      }
+      .volume-control {
+        position: relative;
+        display: flex;
+        flex-direction: column-reverse;
+        align-items: center;
+        height: 120px;
+      }
+      .volume-icon {
+        background: none;
+        padding: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        position: relative;
+        z-index: 2;
+        font-size: 28px;
+        color: rgba(255, 255, 255, 0.9);
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        transition: transform 0.2s ease;
+      }
+      .volume-icon:hover {
+        transform: scale(1.1);
+      }
+      .volume-icon.muted {
+        color: rgba(255, 68, 68, 0.9);
+      }
+      .volume-slider {
+        height: 0;
+        width: 4px;
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 2px;
+        position: absolute;
+        bottom: 50px;
+        left: 50%;
+        transform: translateX(-50%);
+        transition: height 0.3s ease;
+        opacity: 0;
+        pointer-events: none;
+        writing-mode: bt-lr;
+        -webkit-appearance: slider-vertical;
+      }
+      .volume-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 12px;
+        height: 12px;
+        background: white;
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+      .volume-slider::-moz-range-thumb {
+        width: 12px;
+        height: 12px;
+        background: white;
+        border-radius: 50%;
+        cursor: pointer;
+        border: none;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+      .volume-control:hover .volume-slider {
+        height: 100px;
+        opacity: 1;
+        pointer-events: all;
+      }
+      .volume-lines {
+        position: absolute;
+        top: -5px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column-reverse;
+        gap: 3px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        height: 16px;
+      }
+      .volume-icon:hover .volume-lines {
+        opacity: 1;
+      }
+      .volume-line {
+        height: 2px;
+        background-color: rgba(255, 255, 255, 0.9);
+        border-radius: 1px;
+        box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+      }
+      .volume-line:nth-child(1) { width: 8px; }
+      .volume-line:nth-child(2) { width: 12px; }
+      .volume-line:nth-child(3) { width: 16px; }
     </style>
   </head>
   <body>
@@ -114,7 +215,22 @@
           </div>
         </div>
       </div>
-      <canvas id="gameCanvas" width="800" height="400"></canvas>
+      <div style="position: relative;">
+        <canvas id="gameCanvas" width="800" height="400"></canvas>
+        <div class="audio-controls">
+          <div class="volume-control">
+            <div class="volume-icon" id="muteButton" title="Mutear/Desmutear">
+              🔊
+              <div class="volume-lines">
+                <div class="volume-line"></div>
+                <div class="volume-line"></div>
+                <div class="volume-line"></div>
+              </div>
+            </div>
+            <input type="range" id="volumeSlider" class="volume-slider" min="0" max="100" value="30" title="Control de volumen">
+          </div>
+        </div>
+      </div>
     </div>
     <script type="module">
       import { Game } from './src/game/Game.ts';

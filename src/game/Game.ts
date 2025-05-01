@@ -57,6 +57,10 @@ export class Game {
     private backgroundMusic: HTMLAudioElement | null = null;
     private isMusicPlaying: boolean = false;
     private isMusicLoaded: boolean = false;
+    private isMuted: boolean = false;
+    private previousVolume: number = 0.3;
+    private muteButton: HTMLButtonElement;
+    private volumeSlider: HTMLInputElement;
 
     constructor(canvasId: string) {
         this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
@@ -68,6 +72,10 @@ export class Game {
         this.dog = new Dog(this.DOG_X, this.canvas.height - 100);
         this.hurdle = new Hurdle(this.INITIAL_HURDLE_X, this.canvas.height - 90);
 
+        this.muteButton = document.getElementById('muteButton') as HTMLButtonElement;
+        this.volumeSlider = document.getElementById('volumeSlider') as HTMLInputElement;
+        
+        this.initializeAudioControls();
         this.initializeBackgroundMusic();
         this.initializeClouds();
         this.initializeGrassAndFlowers();
@@ -603,19 +611,78 @@ export class Game {
         }
     }
 
+    private initializeAudioControls() {
+        // Configurar el control de volumen
+        this.volumeSlider.addEventListener('input', () => {
+            const volume = parseInt(this.volumeSlider.value) / 100;
+            this.setVolume(volume);
+            this.updateVolumeLines(volume);
+        });
+
+        // Configurar el botón de muteo
+        this.muteButton.addEventListener('click', () => {
+            this.toggleMute();
+        });
+
+        // Inicializar las líneas de volumen
+        this.updateVolumeLines(parseInt(this.volumeSlider.value) / 100);
+    }
+
+    private updateVolumeLines(volume: number) {
+        const lines = document.querySelectorAll('.volume-line');
+        const thresholds = [0.33, 0.66, 1];
+        
+        lines.forEach((line, index) => {
+            if (volume >= thresholds[index]) {
+                (line as HTMLElement).style.backgroundColor = 'white';
+            } else {
+                (line as HTMLElement).style.backgroundColor = 'rgba(255,255,255,0.3)';
+            }
+        });
+    }
+
+    private setVolume(volume: number) {
+        if (this.backgroundMusic) {
+            if (!this.isMuted) {
+                this.backgroundMusic.volume = volume;
+                this.previousVolume = volume;
+                this.updateVolumeLines(volume);
+            }
+        }
+    }
+
+    private toggleMute() {
+        if (this.backgroundMusic) {
+            this.isMuted = !this.isMuted;
+            
+            if (this.isMuted) {
+                this.previousVolume = this.backgroundMusic.volume;
+                this.backgroundMusic.volume = 0;
+                this.muteButton.textContent = '🔇';
+                this.muteButton.classList.add('muted');
+                this.updateVolumeLines(0);
+            } else {
+                this.backgroundMusic.volume = this.previousVolume;
+                this.muteButton.textContent = '🔊';
+                this.muteButton.classList.remove('muted');
+                this.updateVolumeLines(this.previousVolume);
+            }
+        }
+    }
+
     private initializeBackgroundMusic() {
         try {
             this.backgroundMusic = new Audio();
             this.backgroundMusic.src = 'audio/background-music.mp3';
             this.backgroundMusic.loop = true;
-            this.backgroundMusic.volume = 0.3;
-            this.backgroundMusic.autoplay = true; // Intentar reproducción automática
+            this.backgroundMusic.volume = parseInt(this.volumeSlider.value) / 100;
+            this.previousVolume = this.backgroundMusic.volume;
+            this.backgroundMusic.autoplay = true;
 
-            // Eventos para monitorear el estado de la música
             this.backgroundMusic.addEventListener('canplaythrough', () => {
                 console.log('Música cargada y lista para reproducir');
                 this.isMusicLoaded = true;
-                this.startBackgroundMusic(); // Intentar reproducir cuando esté lista
+                this.startBackgroundMusic();
             });
 
             this.backgroundMusic.addEventListener('ended', () => {
@@ -638,7 +705,6 @@ export class Game {
                 this.backgroundMusic = null;
             });
 
-            // Precargar la música
             this.backgroundMusic.load();
         } catch (error) {
             console.error('Error al inicializar la música:', error);
