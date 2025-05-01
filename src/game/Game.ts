@@ -148,7 +148,6 @@ export class Game {
     private cleanup() {
         document.removeEventListener('keydown', this.boundKeydownHandler);
         this.canvas.removeEventListener('click', this.boundClickHandler);
-        this.stopBackgroundMusic();
         if (this.gameLoopId !== null) {
             cancelAnimationFrame(this.gameLoopId);
             this.gameLoopId = null;
@@ -157,7 +156,6 @@ export class Game {
 
     private initializeGame() {
         this.cleanup();
-        this.stopBackgroundMusic(); // Detener la música al reiniciar
 
         // Reiniciar todas las variables del juego
         this.score = 0;
@@ -621,11 +619,28 @@ export class Game {
             this.backgroundMusic.src = 'audio/background-music.mp3';
             this.backgroundMusic.loop = true;
             this.backgroundMusic.volume = 0.3;
+            this.backgroundMusic.autoplay = true; // Intentar reproducción automática
 
             // Eventos para monitorear el estado de la música
             this.backgroundMusic.addEventListener('canplaythrough', () => {
                 console.log('Música cargada y lista para reproducir');
                 this.isMusicLoaded = true;
+                this.startBackgroundMusic(); // Intentar reproducir cuando esté lista
+            });
+
+            this.backgroundMusic.addEventListener('ended', () => {
+                console.log('La música terminó, reiniciando...');
+                if (this.backgroundMusic) {
+                    this.backgroundMusic.currentTime = 0;
+                    this.startBackgroundMusic();
+                }
+            });
+
+            this.backgroundMusic.addEventListener('pause', () => {
+                console.log('La música se pausó, intentando reanudar...');
+                if (!this.gameOver) {
+                    this.startBackgroundMusic();
+                }
             });
 
             this.backgroundMusic.addEventListener('error', (e) => {
@@ -642,8 +657,7 @@ export class Game {
     }
 
     private startBackgroundMusic() {
-        if (this.backgroundMusic && this.isMusicLoaded && !this.isMusicPlaying) {
-            // Intentar reproducir la música con manejo de promesa
+        if (this.backgroundMusic && this.isMusicLoaded && !this.isMusicPlaying && !this.gameOver) {
             const playPromise = this.backgroundMusic.play();
             
             if (playPromise !== undefined) {
@@ -654,23 +668,14 @@ export class Game {
                     })
                     .catch(error => {
                         console.error('Error al reproducir la música:', error);
-                        // Intentar reproducir nuevamente en el próximo clic del usuario
+                        // Programar un nuevo intento en 1 segundo
+                        setTimeout(() => {
+                            if (!this.isMusicPlaying && !this.gameOver) {
+                                this.startBackgroundMusic();
+                            }
+                        }, 1000);
                         this.isMusicPlaying = false;
                     });
-            }
-        } else if (!this.isMusicLoaded) {
-            console.log('La música aún no está cargada');
-        }
-    }
-
-    private stopBackgroundMusic() {
-        if (this.backgroundMusic && this.isMusicPlaying) {
-            try {
-                this.backgroundMusic.pause();
-                this.backgroundMusic.currentTime = 0;
-                this.isMusicPlaying = false;
-            } catch (error) {
-                console.error('Error al detener la música:', error);
             }
         }
     }
@@ -679,11 +684,6 @@ export class Game {
         if (this.gameOver) {
             this.initializeGame();
         } else if (!this.hasClickedThisHurdle) {
-            // Intentar iniciar la música en cada clic si no está reproduciendo
-            if (!this.isMusicPlaying) {
-                this.startBackgroundMusic();
-            }
-            
             // Detener el semáforo en el color actual y acelerar todo el movimiento
             this.isTrafficLightStopped = true;
             this.hasClickedThisHurdle = true;
@@ -714,6 +714,11 @@ export class Game {
             this.lastUpdateTime = currentTime;
 
             this.dog.update();
+            
+            // Asegurarse de que la música esté sonando durante el juego
+            if (!this.isMusicPlaying && this.isMusicLoaded) {
+                this.startBackgroundMusic();
+            }
             
             // Actualizar el terreno y la valla si el perro no está en recuperación
             if (!this.dog.isInRecovery()) {
@@ -748,6 +753,9 @@ export class Game {
         if (this.gameLoopId !== null) {
             cancelAnimationFrame(this.gameLoopId);
         }
+
+        // Intentar iniciar la música al comenzar el juego
+        this.startBackgroundMusic();
 
         const gameLoop = () => {
             this.update();
