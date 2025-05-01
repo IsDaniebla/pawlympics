@@ -63,12 +63,18 @@ export class Dog {
         this.isStumbling = false;
         this.happiness = 1.5;
         this.tongueOut = 1;
+        setTimeout(() => {
+            this.startReturn();
+        }, this.jumpDuration * 16);
     }
 
     public normalJump(hurdleX: number) {
         this.startJump(-12, hurdleX);
         this.isStumbling = false;
         this.happiness = 1.2;
+        setTimeout(() => {
+            this.startReturn();
+        }, this.jumpDuration * 16);
     }
 
     public failJump(hurdleX: number) {
@@ -79,7 +85,6 @@ export class Dog {
         this.recoveryTimer = 0;
         this.isRecovering = false;
         this.isReturning = false;
-        // No actualizar baseX aquí para mantener la referencia a la posición inicial
     }
 
     public reset(x: number) {

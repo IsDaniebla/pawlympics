@@ -788,13 +788,20 @@ export class Game {
             return;
         }
 
-        setTimeout(() => {
-            if (this.currentHurdle >= this.totalHurdles) {
-                this.gameOver = true;
+        // Para saltos exitosos, esperar a que el perro regrese
+        const checkReturn = () => {
+            if (this.dog.isInReturnState()) {
+                setTimeout(checkReturn, 100);
             } else {
-                this.nextHurdle();
+                if (this.currentHurdle >= this.totalHurdles) {
+                    this.gameOver = true;
+                } else {
+                    this.nextHurdle();
+                }
             }
-        }, 1000);
+        };
+
+        setTimeout(checkReturn, 1000);
     }
 
     private updateTrafficLightPosition(currentTime: number) {
