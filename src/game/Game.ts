@@ -76,6 +76,9 @@ export class Game {
 
     public setTotalHurdles(count: number) {
         this.totalHurdles = count;
+    }
+
+    public restart() {
         this.initializeGame();
     }
 

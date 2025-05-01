@@ -128,8 +128,8 @@
         if (!game) {
           game = new Game('gameCanvas');
         }
-        game.setTrainerName(trainerName);
         game.setTotalHurdles(hurdlesCount);
+        game.restart();
       };
 
       // Iniciar el juego automáticamente
