@@ -18,7 +18,6 @@ export class Game {
     private currentColorIndex: number = 0;
     private lastColorChangeTime: number = 0;
     private colorChangeDuration: number = 1000;
-    private canJump: boolean = false;
     private terrainOffset: number = 0;
     private readonly terrainSpeed: number = 2;
     private clouds: Array<{x: number, y: number, width: number}> = [];
@@ -35,9 +34,12 @@ export class Game {
     private readonly INITIAL_HURDLE_X: number = 500;
     private readonly DOG_X: number = 100;
     private hurdleSpeed: number = 0;
+    private baseHurdleSpeed: number = 0;
+    private readonly SPEED_MULTIPLIER: number = 2.5;
     private lastUpdateTime: number | null = null;
     private isTrafficLightStopped: boolean = false;
     private hasClickedThisHurdle: boolean = false;
+    private trainerName: string = 'Angel';
 
     constructor(canvasId: string) {
         this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
@@ -46,6 +48,16 @@ export class Game {
         this.boundClickHandler = this.handleClick.bind(this);
         this.initializeClouds();
         this.initializeGrassAndFlowers();
+        this.initializeGame();
+    }
+
+    public setTrainerName(name: string) {
+        this.trainerName = name;
+        this.initializeGame();
+    }
+
+    public setTotalHurdles(count: number) {
+        this.totalHurdles = count;
         this.initializeGame();
     }
 
@@ -284,7 +296,7 @@ export class Game {
             this.ctx.lineWidth = 1;
             this.ctx.beginPath();
             this.ctx.moveTo(adjustedX, flower.y);
-            this.ctx.lineTo(adjustedX, flower.y - 35); // Aumentado de -15 a -35 para tallos más altos
+            this.ctx.lineTo(adjustedX, flower.y - 35);
             this.ctx.stroke();
 
             // Pétalos
@@ -292,7 +304,7 @@ export class Game {
             for (let i = 0; i < 5; i++) {
                 const angle = (i * Math.PI * 2) / 5;
                 const petalX = adjustedX + Math.cos(angle) * flower.size;
-                const petalY = flower.y - 35 + Math.sin(angle) * flower.size; // Ajustado para la nueva altura
+                const petalY = flower.y - 35 + Math.sin(angle) * flower.size;
                 
                 this.ctx.beginPath();
                 this.ctx.arc(petalX, petalY, flower.size, 0, Math.PI * 2);
@@ -302,7 +314,7 @@ export class Game {
             // Centro de la flor
             this.ctx.fillStyle = '#FFFF00';
             this.ctx.beginPath();
-            this.ctx.arc(adjustedX, flower.y - 35, flower.size * 0.5, 0, Math.PI * 2); // Ajustado para la nueva altura
+            this.ctx.arc(adjustedX, flower.y - 35, flower.size * 0.5, 0, Math.PI * 2);
             this.ctx.fill();
         }
     }
@@ -363,6 +375,22 @@ export class Game {
         this.ctx.fillText('Rojo: 0 pts', textStartX, startY + 160);
     }
 
+    private updateGameInfo() {
+        const currentHurdleElement = document.getElementById('currentHurdle');
+        const successfulHurdlesElement = document.getElementById('successfulHurdles');
+        const scoreElement = document.getElementById('score');
+
+        if (currentHurdleElement) {
+            currentHurdleElement.textContent = `${this.currentHurdle}/${this.totalHurdles}`;
+        }
+        if (successfulHurdlesElement) {
+            successfulHurdlesElement.textContent = this.successfulHurdles.toString();
+        }
+        if (scoreElement) {
+            scoreElement.textContent = this.score.toString();
+        }
+    }
+
     private draw() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -389,24 +417,11 @@ export class Game {
         // Dibujar el perro
         this.dog.draw(this.ctx);
 
-        // Dibujar la valla (ahora siempre visible)
+        // Dibujar la valla
         this.hurdle.draw(this.ctx);
 
-        // Panel de información del juego (izquierda)
-        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-        this.ctx.fillRect(10, 10, 200, 120);
-        
-        this.ctx.fillStyle = 'black';
-        this.ctx.font = 'bold 24px Arial';
-        this.ctx.textAlign = 'left';
-        
-        // Mostrar información del juego
-        this.ctx.fillText(`Valla: ${this.currentHurdle}/${this.totalHurdles}`, 20, 40);
-        this.ctx.fillText(`Superadas: ${this.successfulHurdles}`, 20, 70);
-        this.ctx.fillText(`Puntos: ${this.score}`, 20, 100);
-
-        // Dibujar panel de información de puntos (derecha)
-        this.drawPointsInfo();
+        // Actualizar la información del juego en los paneles HTML
+        this.updateGameInfo();
 
         if (this.gameOver) {
             // Fondo semitransparente
@@ -444,9 +459,10 @@ export class Game {
         if (this.gameOver) {
             this.initializeGame();
         } else if (!this.hasClickedThisHurdle) {
-            // Detener el semáforo en el color actual
+            // Detener el semáforo en el color actual y acelerar la valla
             this.isTrafficLightStopped = true;
             this.hasClickedThisHurdle = true;
+            this.hurdleSpeed = this.baseHurdleSpeed * this.SPEED_MULTIPLIER;
         }
         // Prevenir comportamientos por defecto
         e.preventDefault();
@@ -507,10 +523,11 @@ export class Game {
 
     private createNewHurdle() {
         this.hurdle = new Hurdle(this.INITIAL_HURDLE_X, this.canvas.height - 120);
-        // Calcular la velocidad basada en la duración del semáforo y la distancia
+        // Calcular la velocidad base basada en la duración del semáforo y la distancia
         const totalDistance = this.INITIAL_HURDLE_X - this.DOG_X;
         const totalTime = this.colorChangeDuration * this.trafficLightColors.length;
-        this.hurdleSpeed = totalDistance / totalTime;
+        this.baseHurdleSpeed = totalDistance / totalTime;
+        this.hurdleSpeed = this.baseHurdleSpeed;
     }
 
     private updateHurdlePosition(deltaTime: number) {
