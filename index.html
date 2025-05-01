@@ -6,8 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pawlympics - Concurso de Salto Canino</title>
     <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f0f0;
+      }
       canvas {
         border: 2px solid black;
+        background-color: white;
       }
       .game-container {
         display: flex;
@@ -15,11 +20,65 @@
         align-items: center;
         gap: 20px;
         padding: 20px;
+        max-width: 1000px;
+        margin: 0 auto;
       }
       .game-controls {
         display: flex;
         gap: 10px;
         align-items: center;
+        background-color: #fff;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      .game-info {
+        display: flex;
+        justify-content: space-between;
+        width: 800px;
+        margin-bottom: 20px;
+      }
+      .score-panel, .points-panel {
+        background-color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        min-width: 200px;
+      }
+      .score-panel h3, .points-panel h3 {
+        margin: 0 0 10px 0;
+        color: #333;
+      }
+      .points-list {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 8px;
+        align-items: center;
+      }
+      .color-dot {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+      button {
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #45a049;
+      }
+      input {
+        padding: 6px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      label {
+        color: #333;
       }
     </style>
   </head>
@@ -31,6 +90,29 @@
         <label for="hurdlesCount">Número de vallas:</label>
         <input type="number" id="hurdlesCount" value="5" min="1" max="20">
         <button onclick="restartGame()">Reiniciar Juego</button>
+      </div>
+      <div class="game-info">
+        <div class="score-panel">
+          <h3>Información del Juego</h3>
+          <div id="gameStats">
+            <p>Valla: <span id="currentHurdle">1/5</span></p>
+            <p>Superadas: <span id="successfulHurdles">0</span></p>
+            <p>Puntos: <span id="score">0</span></p>
+          </div>
+        </div>
+        <div class="points-panel">
+          <h3>Puntos por Color</h3>
+          <div class="points-list">
+            <div class="color-dot" style="background-color: green;"></div>
+            <div>Verde: 15 pts</div>
+            <div class="color-dot" style="background-color: yellow;"></div>
+            <div>Amarillo: 10 pts</div>
+            <div class="color-dot" style="background-color: orange;"></div>
+            <div>Naranja: 5 pts</div>
+            <div class="color-dot" style="background-color: red;"></div>
+            <div>Rojo: 0 pts</div>
+          </div>
+        </div>
       </div>
       <canvas id="gameCanvas" width="800" height="400"></canvas>
     </div>

@@ -40,12 +40,22 @@ export class Game {
     private isTrafficLightStopped: boolean = false;
     private hasClickedThisHurdle: boolean = false;
     private trainerName: string = 'Angel';
+    private trafficLightY: number = 0;
+    private trafficLightBaseY: number = 0;
+    private trafficLightAmplitude: number = 10;
+    private trafficLightFrequency: number = 0.002;
+    private trafficLightWingAngle: number = 0;
+    private trafficLightWingSpeed: number = 0.1;
+    private readonly TRAFFIC_LIGHT_X: number = 105;
+    private readonly TRAFFIC_LIGHT_CLOUD_INDEX: number = 0;
 
     constructor(canvasId: string) {
         this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
         this.ctx = this.canvas.getContext('2d')!;
         this.boundKeydownHandler = this.handleKeydown.bind(this);
         this.boundClickHandler = this.handleClick.bind(this);
+        this.trafficLightBaseY = this.canvas.height - 300;
+        this.trafficLightY = this.trafficLightBaseY;
         this.initializeClouds();
         this.initializeGrassAndFlowers();
         this.initializeGame();
@@ -63,7 +73,14 @@ export class Game {
 
     private initializeClouds() {
         this.clouds = [];
-        for (let i = 0; i < 5; i++) {
+        // Agregar la nube principal para el semáforo
+        this.clouds.push({
+            x: this.TRAFFIC_LIGHT_X,
+            y: this.trafficLightBaseY - 100,
+            width: 80
+        });
+        // Agregar nubes adicionales
+        for (let i = 0; i < 4; i++) {
             this.clouds.push({
                 x: Math.random() * this.canvas.width,
                 y: Math.random() * 100 + 20,
@@ -217,18 +234,103 @@ export class Game {
     }
 
     private drawTrafficLight() {
-        // Dibujar el poste del semáforo
-        this.ctx.fillStyle = '#333';
-        this.ctx.fillRect(100, this.canvas.height - 300, 10, 200); // Poste más alto
+        const cloudX = this.clouds[this.TRAFFIC_LIGHT_CLOUD_INDEX].x - (this.terrainOffset * 0.3);
+        const cloudY = this.clouds[this.TRAFFIC_LIGHT_CLOUD_INDEX].y;
+
+        // Función para dibujar un ala con plumas
+        const drawWing = (isLeft: boolean) => {
+            const baseX = this.TRAFFIC_LIGHT_X + (isLeft ? -25 : 25);
+            const baseY = this.trafficLightY + 20;
+            const wingSpread = 60;
+            const numFeathers = 10;
+            
+            this.ctx.save();
+            this.ctx.translate(baseX, baseY);
+            
+            // Ángulo base para el movimiento
+            const baseAngle = Math.sin(this.trafficLightWingAngle) * 0.3 * (isLeft ? -1 : 1);
+            
+            // Dibujar cada pluma
+            for (let i = 0; i < numFeathers; i++) {
+                const featherLength = wingSpread - (i * 3);
+                const featherWidth = 6;
+                const angleSpread = Math.PI / 2.5;
+                const featherAngle = (i / (numFeathers - 1)) * angleSpread;
+                const finalAngle = isLeft ? 
+                    Math.PI + featherAngle + baseAngle : 
+                    -featherAngle + baseAngle;
+
+                this.ctx.save();
+                this.ctx.rotate(finalAngle);
+                
+                // Dibujar la pluma
+                this.ctx.fillStyle = '#FFFFFF';
+                this.ctx.beginPath();
+                this.ctx.moveTo(0, 0);
+                // Crear una forma de pluma curva más pronunciada
+                this.ctx.quadraticCurveTo(
+                    featherLength * 0.6,
+                    featherWidth * 1.2,
+                    featherLength,
+                    0
+                );
+                this.ctx.quadraticCurveTo(
+                    featherLength * 0.6,
+                    -featherWidth * 1.2,
+                    0,
+                    0
+                );
+                this.ctx.fill();
+
+                // Agregar un sutil efecto de sombreado
+                this.ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+                this.ctx.lineWidth = 0.5;
+                this.ctx.stroke();
+                
+                this.ctx.restore();
+            }
+            
+            this.ctx.restore();
+        };
+
+        // Dibujar ambas alas
+        drawWing(true);  // Ala izquierda
+        drawWing(false); // Ala derecha
 
         // Dibujar la caja del semáforo
         this.ctx.fillStyle = 'black';
-        this.ctx.fillRect(85, this.canvas.height - 300, 40, 80);
+        this.ctx.fillRect(this.TRAFFIC_LIGHT_X - 20, this.trafficLightY, 40, 80);
 
-        // Dibujar la luz actual
+        // Dibujar la conexión entre los círculos
+        this.ctx.fillStyle = '#333333'; // Color más claro que el negro para la conexión
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.TRAFFIC_LIGHT_X - 5, this.trafficLightY + 25);
+        this.ctx.lineTo(this.TRAFFIC_LIGHT_X + 5, this.trafficLightY + 25);
+        this.ctx.lineTo(this.TRAFFIC_LIGHT_X + 5, this.trafficLightY + 55);
+        this.ctx.lineTo(this.TRAFFIC_LIGHT_X - 5, this.trafficLightY + 55);
+        this.ctx.closePath();
+        this.ctx.fill();
+
+        // Dibujar los círculos
+        // Círculo superior (siempre apagado)
+        this.ctx.fillStyle = '#440000'; // Rojo oscuro para indicar que está apagado
+        this.ctx.beginPath();
+        this.ctx.arc(this.TRAFFIC_LIGHT_X, this.trafficLightY + 20, 15, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        // Círculo inferior (luz actual)
         this.ctx.fillStyle = this.trafficLightColors[this.currentColorIndex];
         this.ctx.beginPath();
-        this.ctx.arc(105, this.canvas.height - 260, 15, 0, Math.PI * 2);
+        this.ctx.arc(this.TRAFFIC_LIGHT_X, this.trafficLightY + 60, 15, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        // Agregar efecto de brillo a los círculos
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        this.ctx.beginPath();
+        this.ctx.arc(this.TRAFFIC_LIGHT_X - 5, this.trafficLightY + 15, 5, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.beginPath();
+        this.ctx.arc(this.TRAFFIC_LIGHT_X - 5, this.trafficLightY + 55, 5, 0, Math.PI * 2);
         this.ctx.fill();
     }
 
@@ -487,9 +589,8 @@ export class Game {
 
             this.dog.update();
             this.updateHurdlePosition(deltaTime);
-            // Actualizar el semáforo
             this.updateTrafficLight(currentTime);
-            // Actualizar el movimiento del terreno
+            this.updateTrafficLightPosition(currentTime);
             this.terrainOffset += this.terrainSpeed;
         }
     }
@@ -588,5 +689,17 @@ export class Game {
                 this.nextHurdle();
             }
         }, 1500);
+    }
+
+    private updateTrafficLightPosition(currentTime: number) {
+        // Actualizar la posición vertical del semáforo
+        this.trafficLightY = this.trafficLightBaseY + 
+            Math.sin(currentTime * this.trafficLightFrequency) * this.trafficLightAmplitude;
+        
+        // Actualizar el ángulo de las alas
+        this.trafficLightWingAngle += this.trafficLightWingSpeed;
+        if (this.trafficLightWingAngle >= Math.PI * 2) {
+            this.trafficLightWingAngle = 0;
+        }
     }
 }
