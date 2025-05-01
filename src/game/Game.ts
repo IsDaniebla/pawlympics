@@ -19,7 +19,7 @@ export class Game {
     private lastColorChangeTime: number = 0;
     private colorChangeDuration: number = 800;
     private terrainOffset: number = 0;
-    private readonly terrainSpeed: number = 2;
+    private terrainSpeed: number = 2;
     private clouds: Array<{x: number, y: number, width: number}> = [];
     private grass: Array<{x: number, y: number, height: number}> = [];
     private flowers: Array<{x: number, y: number, color: string, size: number}> = [];
@@ -58,6 +58,9 @@ export class Game {
     private readonly TRANSITION_SPEED: number = 3;
     private hurdleReturnStartX: number = 0;
     private hurdleReturnDistance: number = 0;
+    private readonly BASE_TERRAIN_SPEED: number = 2;
+    private readonly RETURN_SPEED_MULTIPLIER: number = 2.5;
+    private readonly ACCELERATED_SPEED_MULTIPLIER: number = 3;
 
     constructor(canvasId: string) {
         this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
@@ -160,6 +163,7 @@ export class Game {
         this.currentColorIndex = 0;
         this.lastColorChangeTime = 0;
         this.terrainOffset = 0;
+        this.terrainSpeed = this.BASE_TERRAIN_SPEED;
         this.showHurdle = false;
         this.isTrafficLightStopped = false;
         this.hasClickedThisHurdle = false;
@@ -212,6 +216,7 @@ export class Game {
         this.currentColorIndex = 0;
         this.lastColorChangeTime = performance.now();
         this.createNewHurdle();
+        this.terrainSpeed = this.BASE_TERRAIN_SPEED;
     }
 
     private drawClouds() {
@@ -605,10 +610,13 @@ export class Game {
         if (this.gameOver) {
             this.initializeGame();
         } else if (!this.hasClickedThisHurdle) {
-            // Detener el semáforo en el color actual y acelerar la valla
+            // Detener el semáforo en el color actual y acelerar todo el movimiento
             this.isTrafficLightStopped = true;
             this.hasClickedThisHurdle = true;
-            this.hurdleSpeed = this.baseHurdleSpeed * this.SPEED_MULTIPLIER;
+            
+            // Aumentar la velocidad del terreno y la valla
+            this.terrainSpeed = this.BASE_TERRAIN_SPEED * this.ACCELERATED_SPEED_MULTIPLIER;
+            this.hurdleSpeed = this.baseHurdleSpeed * this.ACCELERATED_SPEED_MULTIPLIER;
         }
         // Prevenir comportamientos por defecto
         e.preventDefault();
@@ -634,12 +642,10 @@ export class Game {
             this.dog.update();
             
             // Actualizar el terreno y la valla si el perro no está en recuperación
-            // Permitir el movimiento incluso durante el retorno
             if (!this.dog.isInRecovery()) {
                 this.updateHurdlePosition(deltaTime);
-                // Ajustar la velocidad del terreno
                 if (this.dog.isInReturnState()) {
-                    this.terrainOffset += this.terrainSpeed * 1.5; // Velocidad aumentada durante el retorno
+                    this.terrainOffset += this.terrainSpeed * 1.5;
                 } else {
                     this.terrainOffset += this.terrainSpeed;
                 }

@@ -27,7 +27,8 @@ export class Dog {
     private readonly RECOVERY_DELAY: number = 30;
     private readonly RECOVERY_DURATION: number = 45;
     private isReturning: boolean = false;
-    private returnSpeed: number = 3; // Aumentado para un retorno más fluido
+    private returnSpeed: number = 3; // Velocidad base
+    private readonly MAX_RETURN_SPEED: number = 6; // Nueva velocidad máxima
     private targetReturnX: number = 0;
     private readonly INITIAL_X: number = 150;
 
@@ -366,10 +367,15 @@ export class Dog {
         }
     }
 
+    public setReturnSpeed(speed: number) {
+        this.returnSpeed = Math.min(speed, this.MAX_RETURN_SPEED);
+    }
+
     private startReturn() {
         this.isReturning = true;
         this.targetReturnX = this.INITIAL_X;
-        this.happiness = 0.95; // El perro está un poco más feliz al comenzar a regresar
+        this.happiness = 0.95;
+        this.returnSpeed = this.MAX_RETURN_SPEED; // Usar la velocidad máxima al retornar
     }
 
     public isInReturnState(): boolean {
