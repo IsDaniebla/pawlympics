@@ -601,7 +601,7 @@ export class Game {
         
         if (Math.abs(dogX - hurdleX) < 30) {
             if (!this.isJumping) {
-                this.dog.failJump();
+                this.dog.failJump(hurdleX);
                 setTimeout(() => {
                     this.nextHurdle();
                 }, 1500);
@@ -650,10 +650,11 @@ export class Game {
         if (this.gameOver || this.isJumping) return;
 
         this.isJumping = true;
+        const hurdleX = this.hurdle.getX();
 
         if (!this.hasClickedThisHurdle) {
             // Si no ha hecho clic, es un fallo automático
-            this.dog.failJump();
+            this.dog.failJump(hurdleX);
             this.handleJumpResult(false);
             return;
         }
@@ -665,17 +666,19 @@ export class Game {
                                 currentColor === 'orange';
 
         if (isSuccessfulJump) {
-            this.dog.perfectJump();
             if (currentColor === 'green') {
+                this.dog.perfectJump(hurdleX);
                 this.score += 15;
             } else if (currentColor === 'yellow') {
+                this.dog.normalJump(hurdleX);
                 this.score += 10;
             } else if (currentColor === 'orange') {
+                this.dog.normalJump(hurdleX);
                 this.score += 5;
             }
             this.successfulHurdles++;
         } else {
-            this.dog.failJump();
+            this.dog.failJump(hurdleX);
         }
 
         this.handleJumpResult(isSuccessfulJump);

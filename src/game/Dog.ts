@@ -2,8 +2,10 @@ export class Dog {
     private x: number;
     private y: number;
     private baseY: number;
+    private baseX: number;
     private jumpHeight: number = 0;
     private jumpVelocity: number = 0;
+    private horizontalVelocity: number = 0;
     private gravity: number = 0.5;
     private isStumbling: boolean = false;
     private rotationAngle: number = 0;
@@ -15,9 +17,15 @@ export class Dog {
     private blinkTimer: number = 0;
     private tongueOut: number = 0;
     private happiness: number = 1;
+    private isJumping: boolean = false;
+    private targetX: number = 0;
+    private jumpStartX: number = 0;
+    private jumpProgress: number = 0;
+    private jumpDuration: number = 50; // Duración del salto en frames
 
     constructor(x: number, y: number) {
         this.x = x;
+        this.baseX = x;
         this.y = y;
         this.baseY = y;
     }
@@ -28,26 +36,33 @@ export class Dog {
 
     public setX(x: number): void {
         this.x = x;
+        this.baseX = x;
     }
 
-    public perfectJump() {
-        this.jumpVelocity = -15;
+    private startJump(verticalVelocity: number, hurdleX: number) {
+        this.jumpVelocity = verticalVelocity;
         this.jumpHeight = 0;
+        this.isJumping = true;
+        this.jumpStartX = this.x;
+        this.targetX = hurdleX;
+        this.jumpProgress = 0;
+    }
+
+    public perfectJump(hurdleX: number) {
+        this.startJump(-15, hurdleX);
         this.isStumbling = false;
         this.happiness = 1.5;
         this.tongueOut = 1;
     }
 
-    public normalJump() {
-        this.jumpVelocity = -12;
-        this.jumpHeight = 0;
+    public normalJump(hurdleX: number) {
+        this.startJump(-12, hurdleX);
         this.isStumbling = false;
         this.happiness = 1.2;
     }
 
-    public failJump() {
-        this.jumpVelocity = -5;
-        this.jumpHeight = 0;
+    public failJump(hurdleX: number) {
+        this.startJump(-5, hurdleX);
         this.isStumbling = true;
         this.rotationAngle = 0;
         this.happiness = 0.7;
@@ -55,11 +70,15 @@ export class Dog {
 
     public reset(x: number) {
         this.x = x;
+        this.baseX = x;
         this.jumpHeight = 0;
         this.jumpVelocity = 0;
+        this.horizontalVelocity = 0;
         this.isStumbling = false;
         this.rotationAngle = 0;
         this.happiness = 1;
+        this.isJumping = false;
+        this.jumpProgress = 0;
     }
 
     private drawLeg(ctx: CanvasRenderingContext2D, x: number, y: number, angle: number) {
@@ -87,14 +106,25 @@ export class Dog {
     }
 
     public update() {
-        // Actualizar física del salto
-        if (this.jumpVelocity !== 0 || this.y + this.jumpHeight < this.baseY) {
-            this.jumpHeight += this.jumpVelocity;
-            this.jumpVelocity += this.gravity;
+        if (this.isJumping) {
+            this.jumpProgress++;
             
-            if (this.y + this.jumpHeight > this.baseY) {
-                this.jumpHeight = this.baseY - this.y;
-                this.jumpVelocity = 0;
+            // Calcular la posición en la parábola
+            const progress = this.jumpProgress / this.jumpDuration;
+            const jumpDistance = this.targetX - this.jumpStartX;
+            
+            // Movimiento horizontal
+            this.x = this.jumpStartX + (jumpDistance * progress);
+            
+            // Movimiento vertical (parábola)
+            const verticalProgress = progress * 2 - 1; // -1 a 1
+            this.jumpHeight = -70 * (1 - (verticalProgress * verticalProgress)); // Parábola invertida
+            
+            // Verificar si el salto ha terminado
+            if (this.jumpProgress >= this.jumpDuration) {
+                this.isJumping = false;
+                this.jumpHeight = 0;
+                this.x = this.targetX;
             }
         }
 
