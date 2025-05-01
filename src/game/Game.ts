@@ -61,6 +61,9 @@ export class Game {
     private readonly BASE_TERRAIN_SPEED: number = 2;
     private readonly RETURN_SPEED_MULTIPLIER: number = 1.5;
     private readonly ACCELERATED_SPEED_MULTIPLIER: number = 2;
+    private backgroundMusic: HTMLAudioElement | null = null;
+    private isMusicPlaying: boolean = false;
+    private isMusicLoaded: boolean = false;
 
     constructor(canvasId: string) {
         this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
@@ -69,6 +72,10 @@ export class Game {
         this.boundClickHandler = this.handleClick.bind(this);
         this.trafficLightBaseY = this.canvas.height - 300;
         this.trafficLightY = this.trafficLightBaseY;
+
+        // Inicializar la música de fondo
+        this.initializeBackgroundMusic();
+
         this.initializeClouds();
         this.initializeGrassAndFlowers();
         this.initializeGame();
@@ -141,6 +148,7 @@ export class Game {
     private cleanup() {
         document.removeEventListener('keydown', this.boundKeydownHandler);
         this.canvas.removeEventListener('click', this.boundClickHandler);
+        this.stopBackgroundMusic();
         if (this.gameLoopId !== null) {
             cancelAnimationFrame(this.gameLoopId);
             this.gameLoopId = null;
@@ -149,6 +157,7 @@ export class Game {
 
     private initializeGame() {
         this.cleanup();
+        this.stopBackgroundMusic(); // Detener la música al reiniciar
 
         // Reiniciar todas las variables del juego
         this.score = 0;
@@ -606,10 +615,75 @@ export class Game {
         }
     }
 
+    private initializeBackgroundMusic() {
+        try {
+            this.backgroundMusic = new Audio();
+            this.backgroundMusic.src = 'audio/background-music.mp3';
+            this.backgroundMusic.loop = true;
+            this.backgroundMusic.volume = 0.3;
+
+            // Eventos para monitorear el estado de la música
+            this.backgroundMusic.addEventListener('canplaythrough', () => {
+                console.log('Música cargada y lista para reproducir');
+                this.isMusicLoaded = true;
+            });
+
+            this.backgroundMusic.addEventListener('error', (e) => {
+                console.error('Error al cargar la música:', e);
+                this.backgroundMusic = null;
+            });
+
+            // Precargar la música
+            this.backgroundMusic.load();
+        } catch (error) {
+            console.error('Error al inicializar la música:', error);
+            this.backgroundMusic = null;
+        }
+    }
+
+    private startBackgroundMusic() {
+        if (this.backgroundMusic && this.isMusicLoaded && !this.isMusicPlaying) {
+            // Intentar reproducir la música con manejo de promesa
+            const playPromise = this.backgroundMusic.play();
+            
+            if (playPromise !== undefined) {
+                playPromise
+                    .then(() => {
+                        console.log('Música reproduciendo correctamente');
+                        this.isMusicPlaying = true;
+                    })
+                    .catch(error => {
+                        console.error('Error al reproducir la música:', error);
+                        // Intentar reproducir nuevamente en el próximo clic del usuario
+                        this.isMusicPlaying = false;
+                    });
+            }
+        } else if (!this.isMusicLoaded) {
+            console.log('La música aún no está cargada');
+        }
+    }
+
+    private stopBackgroundMusic() {
+        if (this.backgroundMusic && this.isMusicPlaying) {
+            try {
+                this.backgroundMusic.pause();
+                this.backgroundMusic.currentTime = 0;
+                this.isMusicPlaying = false;
+            } catch (error) {
+                console.error('Error al detener la música:', error);
+            }
+        }
+    }
+
     private handleClick(e: MouseEvent) {
         if (this.gameOver) {
             this.initializeGame();
         } else if (!this.hasClickedThisHurdle) {
+            // Intentar iniciar la música en cada clic si no está reproduciendo
+            if (!this.isMusicPlaying) {
+                this.startBackgroundMusic();
+            }
+            
             // Detener el semáforo en el color actual y acelerar todo el movimiento
             this.isTrafficLightStopped = true;
             this.hasClickedThisHurdle = true;
