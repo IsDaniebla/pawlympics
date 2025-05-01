@@ -7,6 +7,14 @@ export class Dog {
     private gravity: number = 0.5;
     private isStumbling: boolean = false;
     private rotationAngle: number = 0;
+    private tailWag: number = 0;
+    private earWiggle: number = 0;
+    private legPhase: number = 0;
+    private eyeBlink: number = 0;
+    private isBlinking: boolean = false;
+    private blinkTimer: number = 0;
+    private tongueOut: number = 0;
+    private happiness: number = 1;
 
     constructor(x: number, y: number) {
         this.x = x;
@@ -26,12 +34,15 @@ export class Dog {
         this.jumpVelocity = -15;
         this.jumpHeight = 0;
         this.isStumbling = false;
+        this.happiness = 1.5;
+        this.tongueOut = 1;
     }
 
     public normalJump() {
         this.jumpVelocity = -12;
         this.jumpHeight = 0;
         this.isStumbling = false;
+        this.happiness = 1.2;
     }
 
     public failJump() {
@@ -39,6 +50,7 @@ export class Dog {
         this.jumpHeight = 0;
         this.isStumbling = true;
         this.rotationAngle = 0;
+        this.happiness = 0.7;
     }
 
     public reset(x: number) {
@@ -47,10 +59,35 @@ export class Dog {
         this.jumpVelocity = 0;
         this.isStumbling = false;
         this.rotationAngle = 0;
+        this.happiness = 1;
+    }
+
+    private drawLeg(ctx: CanvasRenderingContext2D, x: number, y: number, angle: number) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        
+        // Pata superior
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(-3, 0, 6, 15);
+        
+        // Pata inferior
+        ctx.translate(0, 15);
+        ctx.rotate(Math.PI / 8);
+        ctx.fillRect(-3, 0, 6, 10);
+        
+        // Pie
+        ctx.translate(0, 10);
+        ctx.fillStyle = '#654321';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 5, 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
     }
 
     public update() {
-        // Solo actualizar la física del salto
+        // Actualizar física del salto
         if (this.jumpVelocity !== 0 || this.y + this.jumpHeight < this.baseY) {
             this.jumpHeight += this.jumpVelocity;
             this.jumpVelocity += this.gravity;
@@ -61,43 +98,155 @@ export class Dog {
             }
         }
 
-        // Actualizar la animación de tropiezo
+        // Actualizar animaciones con movimientos más sutiles
+        this.tailWag += 0.2;
+        this.earWiggle += 0.1;
+        this.legPhase += 0.3;
+        
+        // Parpadeo aleatorio
+        this.blinkTimer++;
+        if (this.blinkTimer > 100 && Math.random() < 0.02) {
+            this.isBlinking = true;
+            this.blinkTimer = 0;
+        }
+        if (this.isBlinking) {
+            this.eyeBlink += 0.5;
+            if (this.eyeBlink >= Math.PI) {
+                this.eyeBlink = 0;
+                this.isBlinking = false;
+            }
+        }
+
+        // Actualizar lengua con movimiento más suave
+        if (this.tongueOut > 0) {
+            this.tongueOut -= 0.01;
+        }
+
+        // Actualizar tropiezo
         if (this.isStumbling) {
             this.rotationAngle += 0.2;
             if (this.rotationAngle >= Math.PI / 2) {
                 this.rotationAngle = Math.PI / 2;
             }
         }
+
+        // Normalizar felicidad más suavemente
+        if (this.happiness > 1) this.happiness -= 0.005;
+        if (this.happiness < 1) this.happiness += 0.005;
     }
 
     public draw(ctx: CanvasRenderingContext2D) {
         ctx.save();
         
-        // Aplicar transformaciones
+        // Aplicar transformaciones base
         ctx.translate(this.x, this.y + this.jumpHeight);
         if (this.isStumbling) {
             ctx.rotate(this.rotationAngle);
         }
 
-        // Dibujar el perro
-        ctx.fillStyle = 'brown';
+        // Cola
+        ctx.save();
+        ctx.translate(-25, 0);
+        ctx.rotate(Math.sin(this.tailWag) * 0.5);
+        ctx.fillStyle = '#8B4513';
         ctx.beginPath();
+        ctx.moveTo(0, -5);
+        ctx.quadraticCurveTo(-15, -15, -20, -5);
+        ctx.quadraticCurveTo(-15, 5, 0, 5);
+        ctx.fill();
+        ctx.restore();
+
+        // Patas
+        if (!this.isStumbling) {
+            const legMovement = this.jumpVelocity === 0 ? Math.sin(this.legPhase) * 0.3 : Math.PI / 6;
+            this.drawLeg(ctx, -15, 15, legMovement);
+            this.drawLeg(ctx, 15, 15, -legMovement);
+            this.drawLeg(ctx, -5, 15, -legMovement);
+            this.drawLeg(ctx, 20, 15, legMovement);
+        }
+
         // Cuerpo
-        ctx.ellipse(0, 0, 30, 20, 0, 0, Math.PI * 2);
+        ctx.fillStyle = '#8B4513';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 30, 20 * this.happiness, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Sombra del cuerpo para suavizar la conexión con las patas
+        ctx.fillStyle = '#8B4513';
+        ctx.beginPath();
+        ctx.ellipse(0, 15, 25, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Manchas (opcional)
+        ctx.fillStyle = '#654321';
+        ctx.beginPath();
+        ctx.ellipse(10, -5, 8, 6, Math.PI / 4, 0, Math.PI * 2);
         ctx.fill();
         
-        // Cabeza
-        ctx.fillStyle = 'brown';
+        // Cabeza con movimiento más sutil
+        ctx.save();
+        // Agregar un ligero movimiento de cabeza basado en el salto
+        const headBobAmount = this.jumpVelocity !== 0 ? Math.sin(this.legPhase * 0.5) * 2 : 0;
+        ctx.translate(20, -15 + headBobAmount);
+        
+        // Orejas con movimiento más sutil
+        ctx.save();
+        const earWiggleAmount = Math.sin(this.earWiggle) * 0.1;
+        
+        // Oreja izquierda
+        ctx.rotate(-0.2 + earWiggleAmount);
+        ctx.fillStyle = '#8B4513';
         ctx.beginPath();
-        ctx.ellipse(20, -10, 15, 15, 0, 0, Math.PI * 2);
+        ctx.ellipse(-8, -8, 6, 12, -0.2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Oreja derecha
+        ctx.rotate(0.4);
+        ctx.beginPath();
+        ctx.ellipse(8, -8, 6, 12, 0.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // Cara
+        ctx.fillStyle = '#8B4513';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 15, 15, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Orejas
-        ctx.fillStyle = 'darkbrown';
+        // Hocico
+        ctx.fillStyle = '#654321';
         ctx.beginPath();
-        ctx.ellipse(15, -20, 8, 12, 0, 0, Math.PI * 2);
+        ctx.ellipse(8, 2, 8, 6, 0, 0, Math.PI * 2);
         ctx.fill();
 
+        // Nariz
+        ctx.fillStyle = '#000000';
+        ctx.beginPath();
+        ctx.ellipse(15, 0, 4, 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Ojos
+        const eyeOpenness = this.isBlinking ? Math.sin(this.eyeBlink) : 1;
+        ctx.fillStyle = '#000000';
+        ctx.beginPath();
+        ctx.ellipse(-5, -5, 3, 3 * eyeOpenness, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(5, -5, 3, 3 * eyeOpenness, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Lengua (cuando está feliz)
+        if (this.tongueOut > 0) {
+            ctx.fillStyle = '#FF69B4';
+            ctx.beginPath();
+            ctx.moveTo(12, 5);
+            const tongueLength = 10 * this.tongueOut;
+            ctx.quadraticCurveTo(12 + tongueLength/2, 10, 12 + tongueLength, 5);
+            ctx.quadraticCurveTo(12 + tongueLength/2, 8, 12, 5);
+            ctx.fill();
+        }
+
+        ctx.restore();
         ctx.restore();
     }
 } 
