@@ -21,7 +21,7 @@ export class Dog {
     private targetX: number = 0;
     private jumpStartX: number = 0;
     private jumpProgress: number = 0;
-    private jumpDuration: number = 60; // Aumentada la duración del salto
+    private jumpDuration: number = 40; // Reducida aún más la duración del salto
 
     constructor(x: number, y: number) {
         this.x = x;
@@ -116,9 +116,9 @@ export class Dog {
             // Movimiento horizontal
             this.x = this.jumpStartX + (jumpDistance * progress);
             
-            // Movimiento vertical (parábola más alta)
+            // Movimiento vertical (parábola ajustada)
             const verticalProgress = progress * 2 - 1; // -1 a 1
-            this.jumpHeight = -90 * (1 - (verticalProgress * verticalProgress)); // Aumentada la altura máxima de -70 a -90
+            this.jumpHeight = -75 * (1 - (verticalProgress * verticalProgress)); // Altura ajustada
             
             // Verificar si el salto ha terminado
             if (this.jumpProgress >= this.jumpDuration) {

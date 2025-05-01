@@ -48,6 +48,9 @@ export class Game {
     private trafficLightWingSpeed: number = 0.1;
     private readonly TRAFFIC_LIGHT_X: number = 105;
     private readonly TRAFFIC_LIGHT_CLOUD_INDEX: number = 0;
+    private readonly JUMP_DETECTION_DISTANCE: number = 100;
+    private readonly JUMP_LANDING_OFFSET: number = 25;
+    private isFailedJump: boolean = false;
 
     constructor(canvasId: string) {
         this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
@@ -131,6 +134,7 @@ export class Game {
         this.successfulHurdles = 0;
         this.gameOver = false;
         this.isJumping = false;
+        this.isFailedJump = false;
         this.trafficLightColors = ['red'];
         this.currentColorIndex = 0;
         this.lastColorChangeTime = 0;
@@ -180,6 +184,7 @@ export class Game {
         this.isJumping = false;
         this.isTrafficLightStopped = false;
         this.hasClickedThisHurdle = false;
+        this.isFailedJump = false;
         this.generateColorSequence();
         this.currentColorIndex = 0;
         this.lastColorChangeTime = performance.now();
@@ -588,10 +593,15 @@ export class Game {
             this.lastUpdateTime = currentTime;
 
             this.dog.update();
-            this.updateHurdlePosition(deltaTime);
+            
+            // Solo actualizar la posición de la valla y el terreno si no ha fallado el salto
+            if (!this.isFailedJump) {
+                this.updateHurdlePosition(deltaTime);
+                this.terrainOffset += this.terrainSpeed;
+            }
+            
             this.updateTrafficLight(currentTime);
             this.updateTrafficLightPosition(currentTime);
-            this.terrainOffset += this.terrainSpeed;
         }
     }
 
@@ -635,13 +645,20 @@ export class Game {
         if (this.gameOver) return;
 
         const currentX = this.hurdle.getX();
-        if (currentX > this.DOG_X) {
-            const newX = currentX - (this.hurdleSpeed * deltaTime);
-            this.hurdle.setX(Math.max(newX, this.DOG_X));
+        const newX = currentX - (this.hurdleSpeed * deltaTime);
+        this.hurdle.setX(newX);
 
-            // Comenzar el salto cuando la valla esté más lejos
-            if (Math.abs(newX - this.DOG_X) < 40) { // Aumentado de 5 a 40 para comenzar el salto antes
-                this.evaluateJump();
+        // Comenzar el salto cuando la valla esté más lejos
+        if (!this.isJumping && Math.abs(newX - this.DOG_X) < this.JUMP_DETECTION_DISTANCE) {
+            this.evaluateJump();
+        }
+
+        // Si la valla ha salido completamente de la pantalla
+        if (newX < -50) {
+            if (this.currentHurdle >= this.totalHurdles) {
+                this.gameOver = true;
+            } else {
+                this.nextHurdle();
             }
         }
     }
@@ -654,8 +671,9 @@ export class Game {
 
         if (!this.hasClickedThisHurdle) {
             // Si no ha hecho clic, es un fallo automático
-            this.dog.failJump(hurdleX);
-            this.handleJumpResult(false);
+            this.dog.failJump(hurdleX + this.JUMP_LANDING_OFFSET);
+            this.isFailedJump = true;
+            this.handleFailedJump();
             return;
         }
 
@@ -667,31 +685,48 @@ export class Game {
 
         if (isSuccessfulJump) {
             if (currentColor === 'green') {
-                this.dog.perfectJump(hurdleX);
+                this.dog.perfectJump(hurdleX + this.JUMP_LANDING_OFFSET);
                 this.score += 15;
             } else if (currentColor === 'yellow') {
-                this.dog.normalJump(hurdleX);
+                this.dog.normalJump(hurdleX + this.JUMP_LANDING_OFFSET);
                 this.score += 10;
             } else if (currentColor === 'orange') {
-                this.dog.normalJump(hurdleX);
+                this.dog.normalJump(hurdleX + this.JUMP_LANDING_OFFSET);
                 this.score += 5;
             }
             this.successfulHurdles++;
+            this.handleJumpResult(true);
         } else {
-            this.dog.failJump(hurdleX);
+            this.dog.failJump(hurdleX + this.JUMP_LANDING_OFFSET);
+            this.isFailedJump = true;
+            this.handleFailedJump();
         }
-
-        this.handleJumpResult(isSuccessfulJump);
     }
 
-    private handleJumpResult(isSuccess: boolean) {
+    private handleFailedJump() {
+        // Esperar un momento y continuar con la siguiente valla
         setTimeout(() => {
             if (this.currentHurdle >= this.totalHurdles) {
                 this.gameOver = true;
             } else {
                 this.nextHurdle();
             }
-        }, 1500);
+        }, 1000); // Reducido el tiempo de espera a 1 segundo
+    }
+
+    private handleJumpResult(isSuccess: boolean) {
+        if (!isSuccess) {
+            this.handleFailedJump();
+            return;
+        }
+
+        setTimeout(() => {
+            if (this.currentHurdle >= this.totalHurdles) {
+                this.gameOver = true;
+            } else {
+                this.nextHurdle();
+            }
+        }, 1000);
     }
 
     private updateTrafficLightPosition(currentTime: number) {
