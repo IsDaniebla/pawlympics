@@ -27,8 +27,8 @@ export class Dog {
     private readonly RECOVERY_DELAY: number = 30;
     private readonly RECOVERY_DURATION: number = 45;
     private isReturning: boolean = false;
-    private returnSpeed: number = 3; // Velocidad base
-    private readonly MAX_RETURN_SPEED: number = 6; // Nueva velocidad máxima
+    private returnSpeed: number = 2; // Reducido de 3 a 2
+    private readonly MAX_RETURN_SPEED: number = 4; // Reducido de 6 a 4
     private targetReturnX: number = 0;
     private readonly INITIAL_X: number = 150;
 

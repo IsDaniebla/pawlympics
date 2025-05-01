@@ -59,8 +59,8 @@ export class Game {
     private hurdleReturnStartX: number = 0;
     private hurdleReturnDistance: number = 0;
     private readonly BASE_TERRAIN_SPEED: number = 2;
-    private readonly RETURN_SPEED_MULTIPLIER: number = 2.5;
-    private readonly ACCELERATED_SPEED_MULTIPLIER: number = 3;
+    private readonly RETURN_SPEED_MULTIPLIER: number = 1.5;
+    private readonly ACCELERATED_SPEED_MULTIPLIER: number = 2;
 
     constructor(canvasId: string) {
         this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
@@ -645,7 +645,7 @@ export class Game {
             if (!this.dog.isInRecovery()) {
                 this.updateHurdlePosition(deltaTime);
                 if (this.dog.isInReturnState()) {
-                    this.terrainOffset += this.terrainSpeed * 1.5;
+                    this.terrainOffset += this.terrainSpeed * 1.2;
                 } else {
                     this.terrainOffset += this.terrainSpeed;
                 }
