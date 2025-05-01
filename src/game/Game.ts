@@ -4,8 +4,8 @@ import { Hurdle } from "./Hurdle";
 export class Game {
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
-    private dog: Dog = new Dog(50, 0);
-    private hurdle: Hurdle = new Hurdle(0, 0);
+    private dog: Dog;
+    private hurdle: Hurdle;
     private score: number = 0;
     private isJumping: boolean = false;
     private totalHurdles: number = 5;
@@ -30,7 +30,6 @@ export class Game {
         'orange': 5,
         'green': 15
     };
-    private showHurdle: boolean = false;
     private readonly INITIAL_HURDLE_X: number = 600;
     private readonly DOG_X: number = 150;
     private hurdleSpeed: number = 0;
@@ -39,7 +38,6 @@ export class Game {
     private lastUpdateTime: number | null = null;
     private isTrafficLightStopped: boolean = false;
     private hasClickedThisHurdle: boolean = false;
-    private trainerName: string = 'Angel';
     private trafficLightY: number = 0;
     private trafficLightBaseY: number = 0;
     private trafficLightAmplitude: number = 10;
@@ -52,14 +50,9 @@ export class Game {
     private readonly JUMP_LANDING_OFFSET: number = 25;
     private isFailedJump: boolean = false;
     private readonly MIN_FLOWERS: number = 30;
-    private readonly FLOWER_SPACING: number = 50;
     private isTransitioning: boolean = false;
     private nextHurdleReady: boolean = false;
-    private readonly TRANSITION_SPEED: number = 3;
-    private hurdleReturnStartX: number = 0;
-    private hurdleReturnDistance: number = 0;
     private readonly BASE_TERRAIN_SPEED: number = 2;
-    private readonly RETURN_SPEED_MULTIPLIER: number = 1.5;
     private readonly ACCELERATED_SPEED_MULTIPLIER: number = 2;
     private backgroundMusic: HTMLAudioElement | null = null;
     private isMusicPlaying: boolean = false;
@@ -72,17 +65,12 @@ export class Game {
         this.boundClickHandler = this.handleClick.bind(this);
         this.trafficLightBaseY = this.canvas.height - 300;
         this.trafficLightY = this.trafficLightBaseY;
+        this.dog = new Dog(this.DOG_X, this.canvas.height - 100);
+        this.hurdle = new Hurdle(this.INITIAL_HURDLE_X, this.canvas.height - 90);
 
-        // Inicializar la música de fondo
         this.initializeBackgroundMusic();
-
         this.initializeClouds();
         this.initializeGrassAndFlowers();
-        this.initializeGame();
-    }
-
-    public setTrainerName(name: string) {
-        this.trainerName = name;
         this.initializeGame();
     }
 
@@ -171,7 +159,6 @@ export class Game {
         this.lastColorChangeTime = 0;
         this.terrainOffset = 0;
         this.terrainSpeed = this.BASE_TERRAIN_SPEED;
-        this.showHurdle = false;
         this.isTrafficLightStopped = false;
         this.hasClickedThisHurdle = false;
 
