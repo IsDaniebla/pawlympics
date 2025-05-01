@@ -203,7 +203,7 @@ export class Game {
         this.currentHurdle++;
         this.dog.reset(this.dog.getX());
         this.isTransitioning = true;
-        this.nextHurdleReady = false;
+        this.nextHurdleReady = true;
         this.isJumping = false;
         this.isTrafficLightStopped = false;
         this.hasClickedThisHurdle = false;
@@ -211,6 +211,7 @@ export class Game {
         this.generateColorSequence();
         this.currentColorIndex = 0;
         this.lastColorChangeTime = performance.now();
+        this.createNewHurdle();
     }
 
     private drawClouds() {
@@ -632,10 +633,16 @@ export class Game {
 
             this.dog.update();
             
-            // Solo actualizar el terreno y la valla si el perro no está en recuperación
+            // Actualizar el terreno y la valla si el perro no está en recuperación
+            // Permitir el movimiento incluso durante el retorno
             if (!this.dog.isInRecovery()) {
                 this.updateHurdlePosition(deltaTime);
-                this.terrainOffset += this.terrainSpeed;
+                // Ajustar la velocidad del terreno
+                if (this.dog.isInReturnState()) {
+                    this.terrainOffset += this.terrainSpeed * 1.5; // Velocidad aumentada durante el retorno
+                } else {
+                    this.terrainOffset += this.terrainSpeed;
+                }
             }
             
             this.updateTrafficLight(currentTime);
@@ -687,6 +694,8 @@ export class Game {
         // Si estamos en transición y es la nueva valla, usar la velocidad base
         if (this.isTransitioning && this.nextHurdleReady) {
             this.hurdleSpeed = this.baseHurdleSpeed;
+            this.isTransitioning = false; // Resetear el estado de transición
+            this.nextHurdleReady = false; // Resetear el estado de la nueva valla
         } else {
             this.hurdleSpeed = this.baseHurdleSpeed;
         }
@@ -696,40 +705,23 @@ export class Game {
         if (this.gameOver) return;
 
         const currentX = this.hurdle.getX();
-        let newX = currentX;
+        // Ajustar la velocidad de la valla según el estado del perro
+        let moveSpeed = this.terrainSpeed;
+        if (this.dog.isInReturnState()) {
+            moveSpeed *= 1.5; // Aumentar la velocidad durante el retorno
+        }
+        let newX = currentX - moveSpeed;
 
-        if (this.isTransitioning) {
-            if (!this.nextHurdleReady) {
-                newX = currentX - (this.hurdleSpeed * deltaTime);
-                
-                if (newX < -100) {
-                    this.createNewHurdle();
-                    this.nextHurdleReady = true;
-                }
-            } else {
-                newX = currentX - (this.baseHurdleSpeed * deltaTime);
-                
-                if (newX <= this.INITIAL_HURDLE_X) {
-                    this.isTransitioning = false;
-                    newX = this.INITIAL_HURDLE_X;
-                }
-            }
-        } else if (!this.isFailedJump) {
-            // Mover la valla cuando el perro está caminando (no en recuperación)
-            if (!this.dog.isInRecovery()) {
-                newX = currentX - (this.hurdleSpeed * deltaTime);
-            }
-            
-            if (!this.isJumping && !this.dog.isInRecovery() && Math.abs(newX - this.DOG_X) < this.JUMP_DETECTION_DISTANCE) {
-                this.evaluateJump();
-            }
+        // Solo evaluar el salto si el perro no está retornando y no está en transición
+        if (!this.isJumping && !this.dog.isInRecovery() && !this.dog.isInReturnState() && !this.isTransitioning && Math.abs(newX - this.DOG_X) < this.JUMP_DETECTION_DISTANCE) {
+            this.evaluateJump();
         }
 
         this.hurdle.setX(newX);
     }
 
     private evaluateJump() {
-        if (this.gameOver || this.isJumping || this.dog.isInRecovery()) return;
+        if (this.gameOver || this.isJumping || this.dog.isInRecovery() || this.dog.isInReturnState()) return;
 
         this.isJumping = true;
         const hurdleX = this.hurdle.getX();
@@ -770,13 +762,12 @@ export class Game {
 
     private handleFailedJump() {
         const checkRecovery = () => {
-            if (this.dog.isInRecovery()) {
+            if (this.dog.isInRecovery() || this.dog.isInReturnState()) {
                 setTimeout(checkRecovery, 100);
             } else {
                 if (this.currentHurdle >= this.totalHurdles) {
                     this.gameOver = true;
-                } else {
-                    // Cuando el perro se recupera, todo vuelve a moverse
+                } else if (this.dog.hasReturnedToStart()) {
                     this.nextHurdle();
                 }
             }

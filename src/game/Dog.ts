@@ -27,7 +27,7 @@ export class Dog {
     private readonly RECOVERY_DELAY: number = 30;
     private readonly RECOVERY_DURATION: number = 45;
     private isReturning: boolean = false;
-    private returnSpeed: number = 2;
+    private returnSpeed: number = 3; // Aumentado para un retorno más fluido
     private targetReturnX: number = 0;
     private readonly INITIAL_X: number = 150;
 
@@ -77,7 +77,8 @@ export class Dog {
         this.happiness = 0.7;
         this.recoveryTimer = 0;
         this.isRecovering = false;
-        this.baseX = this.x; // Mantener la posición actual como base
+        this.isReturning = false;
+        // No actualizar baseX aquí para mantener la referencia a la posición inicial
     }
 
     public reset(x: number) {
@@ -135,7 +136,23 @@ export class Dog {
                 this.isJumping = false;
                 this.jumpHeight = 0;
                 this.x = this.targetX;
-                this.baseX = this.x; // Actualizar la posición base
+                this.baseX = this.x;
+            }
+        }
+
+        // Manejar el retorno gradual a la posición original
+        if (this.isReturning) {
+            const distanceToTarget = this.targetReturnX - this.x;
+            if (Math.abs(distanceToTarget) > this.returnSpeed) {
+                this.x += Math.sign(distanceToTarget) * this.returnSpeed;
+                this.baseX = this.x;
+                // Aumentar la velocidad de movimiento de las patas durante el retorno
+                this.legPhase += 0.4;
+            } else {
+                this.x = this.targetReturnX;
+                this.baseX = this.targetReturnX;
+                this.isReturning = false;
+                this.happiness = 1; // El perro vuelve a estar completamente feliz al llegar
             }
         }
 
@@ -161,15 +178,19 @@ export class Dog {
                     this.isRecovering = false;
                     this.rotationAngle = 0;
                     this.happiness = 0.9;
-                    // No iniciamos el retorno, el perro se queda donde está
+                    this.startReturn();
                 }
             }
         }
 
         // Actualizar animaciones
-        this.tailWag += 0.2;
-        this.earWiggle += 0.1;
-        this.legPhase += 0.3;
+        if (!this.isStumbling) {
+            this.tailWag += 0.2;
+            this.earWiggle += 0.1;
+            if (!this.isReturning) {
+                this.legPhase += 0.3;
+            }
+        }
         
         // Parpadeo aleatorio
         this.blinkTimer++;
@@ -348,6 +369,7 @@ export class Dog {
     private startReturn() {
         this.isReturning = true;
         this.targetReturnX = this.INITIAL_X;
+        this.happiness = 0.95; // El perro está un poco más feliz al comenzar a regresar
     }
 
     public isInReturnState(): boolean {
@@ -356,6 +378,10 @@ export class Dog {
 
     public getReturnSpeed(): number {
         return this.returnSpeed;
+    }
+
+    public hasReturnedToStart(): boolean {
+        return !this.isReturning && this.x === this.INITIAL_X;
     }
 
     public isInRecovery(): boolean {
