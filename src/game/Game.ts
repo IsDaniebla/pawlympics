@@ -1,6 +1,7 @@
 import { Dog } from "./Dog";
 import { Hurdle } from "./Hurdle";
 import { Effects } from "./Effects";
+import { SoundEffects } from "./SoundEffects";
 
 export class Game {
     private canvas: HTMLCanvasElement;
@@ -8,6 +9,7 @@ export class Game {
     private dog: Dog;
     private hurdle: Hurdle;
     private effects: Effects;
+    private soundEffects: SoundEffects;
     private score: number = 0;
     private isJumping: boolean = false;
     private totalHurdles: number = 5;
@@ -76,6 +78,7 @@ export class Game {
         this.dog = new Dog(this.DOG_X, this.canvas.height - 100);
         this.hurdle = new Hurdle(this.INITIAL_HURDLE_X, this.canvas.height - 90);
         this.effects = new Effects();
+        this.soundEffects = new SoundEffects();
 
         this.muteButton = document.getElementById('muteButton') as HTMLButtonElement;
         this.volumeSlider = document.getElementById('volumeSlider') as HTMLInputElement;
@@ -588,9 +591,10 @@ export class Game {
         this.updateGameInfo();
 
         if (this.gameOver) {
-            // Si es el primer frame de gameOver, guardar el tiempo
+            // Si es el primer frame de gameOver, guardar el tiempo y reproducir sonido
             if (this.gameOverStartTime === 0) {
                 this.gameOverStartTime = performance.now();
+                this.soundEffects.playSound('game_over');
             }
 
             // Fondo semitransparente
@@ -674,11 +678,13 @@ export class Game {
                 this.updateVolumeLines(volume);
             }
         }
+        this.soundEffects.setVolume(volume);
     }
 
     private toggleMute() {
         if (this.backgroundMusic) {
             this.isMuted = !this.isMuted;
+            this.soundEffects.toggleMute();
             
             if (this.isMuted) {
                 this.previousVolume = this.backgroundMusic.volume;
@@ -903,6 +909,7 @@ export class Game {
             this.dog.failJump(hurdleX + this.JUMP_LANDING_OFFSET);
             this.isFailedJump = true;
             this.effects.createFailEffect(this.dog.getX(), this.canvas.height - 90);
+            this.soundEffects.playSound('fail_jump');
             this.handleFailedJump();
             return;
         }
@@ -918,14 +925,17 @@ export class Game {
                 this.dog.perfectJump(hurdleX + this.JUMP_LANDING_OFFSET);
                 this.score += 15;
                 this.effects.createSuccessEffect(this.dog.getX(), this.canvas.height - 120);
+                this.soundEffects.playSound('perfect_jump');
             } else if (currentColor === 'yellow') {
                 this.dog.normalJump(hurdleX + this.JUMP_LANDING_OFFSET);
                 this.score += 10;
                 this.effects.createSuccessEffect(this.dog.getX(), this.canvas.height - 120);
+                this.soundEffects.playSound('good_jump');
             } else if (currentColor === 'orange') {
                 this.dog.normalJump(hurdleX + this.JUMP_LANDING_OFFSET);
                 this.score += 5;
                 this.effects.createSuccessEffect(this.dog.getX(), this.canvas.height - 120);
+                this.soundEffects.playSound('good_jump');
             }
             this.successfulHurdles++;
             this.handleJumpResult(true);
@@ -933,6 +943,7 @@ export class Game {
             this.dog.failJump(hurdleX + this.JUMP_LANDING_OFFSET);
             this.isFailedJump = true;
             this.effects.createFailEffect(this.dog.getX(), this.canvas.height - 90);
+            this.soundEffects.playSound('fail_jump');
             this.handleFailedJump();
         }
     }
