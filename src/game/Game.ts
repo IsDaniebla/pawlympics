@@ -1,16 +1,20 @@
 import { Dog } from "./Dog";
 import { Hurdle } from "./Hurdle";
+import { Effects } from "./Effects";
 
 export class Game {
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
     private dog: Dog;
     private hurdle: Hurdle;
+    private effects: Effects;
     private score: number = 0;
     private isJumping: boolean = false;
     private totalHurdles: number = 5;
     private currentHurdle: number = 1;
     private gameOver: boolean = false;
+    private gameOverStartTime: number = 0;
+    private readonly CONFETTI_DURATION: number = 4000; // 4 segundos en milisegundos
     private boundKeydownHandler: (e: KeyboardEvent) => void;
     private boundClickHandler: (e: MouseEvent) => void;
     private gameLoopId: number | null = null;
@@ -71,6 +75,7 @@ export class Game {
         this.trafficLightY = this.trafficLightBaseY;
         this.dog = new Dog(this.DOG_X, this.canvas.height - 100);
         this.hurdle = new Hurdle(this.INITIAL_HURDLE_X, this.canvas.height - 90);
+        this.effects = new Effects();
 
         this.muteButton = document.getElementById('muteButton') as HTMLButtonElement;
         this.volumeSlider = document.getElementById('volumeSlider') as HTMLInputElement;
@@ -161,6 +166,7 @@ export class Game {
         this.currentHurdle = 1;
         this.successfulHurdles = 0;
         this.gameOver = false;
+        this.gameOverStartTime = 0;
         this.isJumping = false;
         this.isFailedJump = false;
         this.isTransitioning = false;
@@ -178,6 +184,8 @@ export class Game {
         this.dog = new Dog(this.DOG_X, this.canvas.height - 100);
         this.createNewHurdle();
         this.initializeGrassAndFlowers();
+        this.effects = new Effects(); // Reiniciar los efectos
+        this.effects.clearAllParticles(); // Limpiar todas las partículas existentes
         
         // Agregar los event listeners
         document.addEventListener('keydown', this.boundKeydownHandler);
@@ -580,9 +588,23 @@ export class Game {
         this.updateGameInfo();
 
         if (this.gameOver) {
+            // Si es el primer frame de gameOver, guardar el tiempo
+            if (this.gameOverStartTime === 0) {
+                this.gameOverStartTime = performance.now();
+            }
+
             // Fondo semitransparente
             this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+            // Crear efecto de confeti solo durante los primeros 4 segundos
+            const timeSinceGameOver = performance.now() - this.gameOverStartTime;
+            if (timeSinceGameOver < this.CONFETTI_DURATION && Math.random() < 0.3) {
+                this.effects.createGameOverEffect(this.canvas.width / 2, this.canvas.height / 2);
+            }
+            
+            // Dibujar efectos (confeti)
+            this.effects.draw(this.ctx);
             
             // Texto de juego terminado
             this.ctx.fillStyle = 'white';
@@ -608,6 +630,9 @@ export class Game {
             
             // Restablecer alineación del texto
             this.ctx.textAlign = 'left';
+        } else {
+            // Dibujar efectos solo si no es game over
+            this.effects.draw(this.ctx);
         }
     }
 
@@ -764,11 +789,14 @@ export class Game {
     }
 
     private update() {
-        if (!this.gameOver) { 
-            const currentTime = performance.now();
-            const deltaTime = this.lastUpdateTime ? currentTime - this.lastUpdateTime : 0;
-            this.lastUpdateTime = currentTime;
+        const currentTime = performance.now();
+        const deltaTime = this.lastUpdateTime ? currentTime - this.lastUpdateTime : 0;
+        this.lastUpdateTime = currentTime;
 
+        // Actualizar efectos siempre, incluso en game over
+        this.effects.update();
+
+        if (!this.gameOver) { 
             this.dog.update();
             
             // Asegurarse de que la música esté sonando durante el juego
@@ -874,6 +902,7 @@ export class Game {
             // Si no ha hecho clic, es un fallo automático
             this.dog.failJump(hurdleX + this.JUMP_LANDING_OFFSET);
             this.isFailedJump = true;
+            this.effects.createFailEffect(this.dog.getX(), this.canvas.height - 90);
             this.handleFailedJump();
             return;
         }
@@ -888,18 +917,22 @@ export class Game {
             if (currentColor === 'green') {
                 this.dog.perfectJump(hurdleX + this.JUMP_LANDING_OFFSET);
                 this.score += 15;
+                this.effects.createSuccessEffect(this.dog.getX(), this.canvas.height - 120);
             } else if (currentColor === 'yellow') {
                 this.dog.normalJump(hurdleX + this.JUMP_LANDING_OFFSET);
                 this.score += 10;
+                this.effects.createSuccessEffect(this.dog.getX(), this.canvas.height - 120);
             } else if (currentColor === 'orange') {
                 this.dog.normalJump(hurdleX + this.JUMP_LANDING_OFFSET);
                 this.score += 5;
+                this.effects.createSuccessEffect(this.dog.getX(), this.canvas.height - 120);
             }
             this.successfulHurdles++;
             this.handleJumpResult(true);
         } else {
             this.dog.failJump(hurdleX + this.JUMP_LANDING_OFFSET);
             this.isFailedJump = true;
+            this.effects.createFailEffect(this.dog.getX(), this.canvas.height - 90);
             this.handleFailedJump();
         }
     }
