@@ -31,6 +31,8 @@ export class Dog {
     private readonly MAX_RETURN_SPEED: number = 4; // Reducido de 6 a 4
     private targetReturnX: number = 0;
     private readonly INITIAL_X: number = 150;
+    private readonly BODY_WIDTH: number = 30;
+    private readonly BODY_HEIGHT: number = 20;
 
     constructor(x: number, y: number) {
         this.x = x;
@@ -61,7 +63,7 @@ export class Dog {
     public perfectJump(hurdleX: number) {
         this.startJump(-15, hurdleX);
         this.isStumbling = false;
-        this.happiness = 1.5;
+        this.happiness = 1;
         this.tongueOut = 1;
         setTimeout(() => {
             this.startReturn();
@@ -71,7 +73,7 @@ export class Dog {
     public normalJump(hurdleX: number) {
         this.startJump(-12, hurdleX);
         this.isStumbling = false;
-        this.happiness = 1.2;
+        this.happiness = 1;
         setTimeout(() => {
             this.startReturn();
         }, this.jumpDuration * 16);
@@ -81,7 +83,7 @@ export class Dog {
         this.startJump(-5, hurdleX + 100);
         this.isStumbling = true;
         this.rotationAngle = 0;
-        this.happiness = 0.7;
+        this.happiness = 1;
         this.recoveryTimer = 0;
         this.isRecovering = false;
         this.isReturning = false;
@@ -229,7 +231,9 @@ export class Dog {
         // Cola
         ctx.save();
         ctx.translate(-25, 0);
-        ctx.rotate(Math.sin(this.tailWag) * 0.5);
+        // Ajustar el movimiento de la cola según el estado
+        const tailWagAmount = this.isStumbling ? 0.2 : (this.tongueOut > 0 ? 0.8 : 0.5);
+        ctx.rotate(Math.sin(this.tailWag) * tailWagAmount);
         ctx.fillStyle = '#8B4513';
         ctx.beginPath();
         ctx.moveTo(0, -5);
@@ -238,26 +242,26 @@ export class Dog {
         ctx.fill();
         ctx.restore();
 
-        // Patas - Ahora siempre se dibujan, con movimientos diferentes según el estado
+        // Patas
         const legMovement = this.calculateLegMovement();
         this.drawLeg(ctx, -15, 15, legMovement.frontLeft);
         this.drawLeg(ctx, 15, 15, legMovement.frontRight);
         this.drawLeg(ctx, -5, 15, legMovement.backLeft);
         this.drawLeg(ctx, 20, 15, legMovement.backRight);
 
-        // Cuerpo
+        // Cuerpo principal - siempre mantiene su forma
         ctx.fillStyle = '#8B4513';
         ctx.beginPath();
-        ctx.ellipse(0, 0, 30, 20 * this.happiness, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, this.BODY_WIDTH, this.BODY_HEIGHT, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Sombra del cuerpo para suavizar la conexión con las patas
+        // Sombra del cuerpo
         ctx.fillStyle = '#8B4513';
         ctx.beginPath();
         ctx.ellipse(0, 15, 25, 5, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Manchas (opcional)
+        // Manchas
         ctx.fillStyle = '#654321';
         ctx.beginPath();
         ctx.ellipse(10, -5, 8, 6, Math.PI / 4, 0, Math.PI * 2);
@@ -265,13 +269,17 @@ export class Dog {
         
         // Cabeza con movimiento más sutil
         ctx.save();
-        // Agregar un ligero movimiento de cabeza basado en el salto
-        const headBobAmount = this.jumpVelocity !== 0 ? Math.sin(this.legPhase * 0.5) * 2 : 0;
+        // Ajustar el movimiento de la cabeza según el estado
+        const headBobAmount = this.isStumbling ? 
+            0 : 
+            (this.jumpVelocity !== 0 ? Math.sin(this.legPhase * 0.5) * 2 : 0);
+        const headTiltAmount = this.isStumbling ? -0.2 : (this.tongueOut > 0 ? 0.1 : 0);
         ctx.translate(20, -15 + headBobAmount);
+        ctx.rotate(headTiltAmount);
         
         // Orejas con movimiento más sutil
         ctx.save();
-        const earWiggleAmount = Math.sin(this.earWiggle) * 0.1;
+        const earWiggleAmount = this.isStumbling ? 0 : Math.sin(this.earWiggle) * 0.1;
         
         // Oreja izquierda
         ctx.rotate(-0.2 + earWiggleAmount);
@@ -305,14 +313,15 @@ export class Dog {
         ctx.ellipse(15, 0, 4, 3, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Ojos
+        // Ojos - ajustar expresión según el estado
         const eyeOpenness = this.isBlinking ? Math.sin(this.eyeBlink) : 1;
+        const eyeSize = this.isStumbling ? 2 : 3;
         ctx.fillStyle = '#000000';
         ctx.beginPath();
-        ctx.ellipse(-5, -5, 3, 3 * eyeOpenness, 0, 0, Math.PI * 2);
+        ctx.ellipse(-5, -5, eyeSize, eyeSize * eyeOpenness, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.beginPath();
-        ctx.ellipse(5, -5, 3, 3 * eyeOpenness, 0, 0, Math.PI * 2);
+        ctx.ellipse(5, -5, eyeSize, eyeSize * eyeOpenness, 0, 0, Math.PI * 2);
         ctx.fill();
 
         // Lengua (cuando está feliz)
@@ -379,8 +388,8 @@ export class Dog {
     private startReturn() {
         this.isReturning = true;
         this.targetReturnX = this.INITIAL_X;
-        this.happiness = 0.95;
-        this.returnSpeed = this.MAX_RETURN_SPEED; // Usar la velocidad máxima al retornar
+        this.happiness = 1;
+        this.returnSpeed = this.MAX_RETURN_SPEED;
     }
 
     public isInReturnState(): boolean {
