@@ -2,6 +2,7 @@ import { Dog } from "./Dog";
 import { Hurdle } from "./Hurdle";
 import { Effects } from "./Effects";
 import { SoundEffects } from "./SoundEffects";
+import { ScoreSystem } from "./ScoreSystem";
 
 export class Game {
     private canvas: HTMLCanvasElement;
@@ -67,8 +68,11 @@ export class Game {
     private previousVolume: number = 0.3;
     private muteButton: HTMLButtonElement;
     private volumeSlider: HTMLInputElement;
+    private scoreSystem: ScoreSystem;
+    private playerName: string = 'Invitado';
 
-    constructor(canvasId: string) {
+    constructor(canvasId: string, scoreSystem: ScoreSystem) {
+        this.scoreSystem = scoreSystem;
         this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
         this.ctx = this.canvas.getContext('2d')!;
         this.boundKeydownHandler = this.handleKeydown.bind(this);
@@ -959,8 +963,7 @@ export class Game {
                 setTimeout(checkRecovery, 100);
             } else {
                 if (this.currentHurdle >= this.totalHurdles) {
-                    this.gameOver = true;
-                    this.effects.setGameOver(true); // Actualizar el estado en los efectos
+                    this.handleGameOver();
                 } else if (this.dog.hasReturnedToStart()) {
                     this.nextHurdle();
                 }
@@ -982,8 +985,7 @@ export class Game {
                 setTimeout(checkReturn, 100);
             } else {
                 if (this.currentHurdle >= this.totalHurdles) {
-                    this.gameOver = true;
-                    this.effects.setGameOver(true); // Actualizar el estado en los efectos
+                    this.handleGameOver();
                 } else {
                     this.nextHurdle();
                 }
@@ -1003,5 +1005,23 @@ export class Game {
         if (this.trafficLightWingAngle >= Math.PI * 2) {
             this.trafficLightWingAngle = 0;
         }
+    }
+
+    public setPlayerName(name: string) {
+        this.playerName = name || 'Invitado';
+    }
+
+    private handleGameOver() {
+        this.gameOver = true;
+        this.effects.setGameOver(true);
+        this.gameOverStartTime = performance.now();
+        this.soundEffects.playSound('game_over');
+        
+        // Guardar la puntuación
+        this.scoreSystem.addScore(this.playerName, this.score, this.totalHurdles);
+
+        // Actualizar la tabla de puntuaciones
+        const updateScoreTableEvent = new CustomEvent('updateScoreTable');
+        document.dispatchEvent(updateScoreTableEvent);
     }
 }

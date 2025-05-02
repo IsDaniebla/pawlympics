@@ -25,7 +25,7 @@
       }
       .game-controls {
         display: flex;
-        gap: 10px;
+        gap: 20px;
         align-items: center;
         background-color: #fff;
         padding: 15px;
@@ -181,25 +181,126 @@
       .volume-line:nth-child(1) { width: 8px; }
       .volume-line:nth-child(2) { width: 12px; }
       .volume-line:nth-child(3) { width: 16px; }
+
+      /* Estilos para el selector de jugador */
+      .player-select-container {
+        position: relative;
+        width: 200px;
+        margin-right: 20px;
+      }
+      .player-select {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      .player-list {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #ddd;
+        border-top: none;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+      }
+      .player-list div {
+        padding: 8px;
+        cursor: pointer;
+      }
+      .player-list div:hover {
+        background-color: #f0f0f0;
+      }
+
+      /* Estilos para la tabla de puntuaciones compacta */
+      .mini-scoreboard {
+        background-color: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        min-width: 200px;
+      }
+      .mini-scoreboard h3 {
+        margin: 0 0 10px 0;
+        color: #333;
+        font-size: 14px;
+        text-align: center;
+      }
+      .mini-score-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      .mini-score-table th, .mini-score-table td {
+        padding: 4px;
+        text-align: center;
+        border-bottom: 1px solid #eee;
+      }
+      .mini-score-table th {
+        background-color: #f5f5f5;
+        font-weight: bold;
+      }
+      .mini-score-table tr:last-child td {
+        border-bottom: none;
+      }
+
+      /* Ajustar el estilo del select de vallas */
+      #hurdlesCount {
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        width: 70px;
+      }
     </style>
   </head>
   <body>
     <div class="game-container">
       <div class="game-controls">
-        <label for="trainerName">Nombre del entrenador:</label>
-        <input type="text" id="trainerName" value="Angel">
+        <div class="player-select-container">
+          <input type="text" id="playerSelect" class="player-select" placeholder="Nombre del jugador">
+          <div id="playerList" class="player-list"></div>
+        </div>
         <label for="hurdlesCount">Número de vallas:</label>
-        <input type="number" id="hurdlesCount" value="5" min="1" max="20">
+        <select id="hurdlesCount">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5" selected>5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">10</option>
+        </select>
         <button onclick="restartGame()">Reiniciar Juego</button>
       </div>
       <div class="game-info">
         <div class="score-panel">
           <h3>Información del Juego</h3>
           <div id="gameStats">
+            <p>Jugador: <span id="currentPlayer">Invitado</span></p>
             <p>Valla: <span id="currentHurdle">1/5</span></p>
             <p>Superadas: <span id="successfulHurdles">0</span></p>
             <p>Puntos: <span id="score">0</span></p>
           </div>
+        </div>
+        <div class="mini-scoreboard">
+          <h3>Top 4 Puntuaciones</h3>
+          <table class="mini-score-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Jugador</th>
+                <th>Pts</th>
+              </tr>
+            </thead>
+            <tbody id="miniScoreTableBody">
+            </tbody>
+          </table>
         </div>
         <div class="points-panel">
           <h3>Puntos por Color</h3>
@@ -234,24 +335,142 @@
     </div>
     <script type="module">
       import { Game } from './src/game/Game.ts';
+      import { ScoreSystem } from './src/game/ScoreSystem.ts';
       
       let game;
+      const scoreSystem = new ScoreSystem();
 
-      window.restartGame = () => {
+      function updatePlayerInfo(playerName, updateInput = true) {
+        const playerSelect = document.getElementById('playerSelect');
+        const finalName = playerName.trim() || playerSelect.getAttribute('data-current-value') || 'Invitado';
+        
+        // Actualizar el valor del input solo si se especifica
+        if (updateInput) {
+          playerSelect.value = playerName;
+        }
+        
+        // Actualizar el resto de elementos
+        playerSelect.setAttribute('data-current-value', finalName);
+        document.getElementById('currentPlayer').textContent = finalName;
+        
+        if (game) {
+          game.setPlayerName(finalName);
+        }
+      }
+
+      function initGame() {
         const hurdlesCount = parseInt(document.getElementById('hurdlesCount').value) || 5;
-        const trainerName = document.getElementById('trainerName').value || 'Angel';
+        const playerSelect = document.getElementById('playerSelect');
+        const playerName = playerSelect.value.trim() || playerSelect.getAttribute('data-current-value') || 'Invitado';
+        
+        updatePlayerInfo(playerName);
         
         if (!game) {
-          game = new Game('gameCanvas');
+          game = new Game('gameCanvas', scoreSystem);
         }
         game.setTotalHurdles(hurdlesCount);
         game.restart();
-      };
+        updateScoreTable();
+      }
 
-      // Iniciar el juego automáticamente
-      window.onload = () => {
-        restartGame();
-      };
+      function selectPlayer(player) {
+        updatePlayerInfo(player || '');
+        document.getElementById('playerList').style.display = 'none';
+        initGame();
+      }
+
+      function updatePlayerList() {
+        const playerSelect = document.getElementById('playerSelect');
+        const playerList = document.getElementById('playerList');
+        const searchTerm = playerSelect.value.toLowerCase();
+        const players = scoreSystem.getAllPlayers();
+        
+        // Actualizar el nombre del jugador mientras se escribe, sin actualizar el input
+        updatePlayerInfo(playerSelect.value, false);
+        
+        // Filtrar jugadores basado en el término de búsqueda
+        const filteredPlayers = players.filter(player => 
+          player.toLowerCase().includes(searchTerm)
+        );
+
+        // Mostrar la lista siempre que el input tenga el foco
+        playerList.style.display = 'block';
+        
+        // Actualizar la lista de jugadores
+        playerList.innerHTML = filteredPlayers
+          .map(player => `<div onclick="window.selectPlayer('${player}')">${player}</div>`)
+          .join('');
+
+        // Si no hay jugadores filtrados, ocultar la lista
+        if (filteredPlayers.length === 0) {
+          playerList.style.display = 'none';
+        }
+      }
+
+      function updateScoreTable() {
+        const hurdleCount = parseInt(document.getElementById('hurdlesCount').value);
+        const scores = scoreSystem.getTopScores(hurdleCount);
+        
+        // Actualizar tabla mini
+        const miniTbody = document.getElementById('miniScoreTableBody');
+        miniTbody.innerHTML = scores.slice(0, 4).map((score, index) => `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${score.playerName.length > 8 ? score.playerName.substring(0, 8) + '...' : score.playerName}</td>
+            <td>${score.score}</td>
+          </tr>
+        `).join('');
+      }
+
+      // Configurar eventos
+      const playerSelect = document.getElementById('playerSelect');
+      
+      playerSelect.addEventListener('focus', function() {
+        // Al recibir el foco, mostrar la lista
+        updatePlayerList();
+      });
+
+      playerSelect.addEventListener('input', updatePlayerList);
+      
+      playerSelect.addEventListener('blur', () => {
+        // Dar tiempo para que se procese el click en la lista
+        setTimeout(() => {
+          const playerSelect = document.getElementById('playerSelect');
+          document.getElementById('playerList').style.display = 'none';
+          
+          // Si el input está vacío, restaurar el valor anterior
+          if (!playerSelect.value.trim()) {
+            const previousValue = playerSelect.getAttribute('data-current-value') || 'Invitado';
+            updatePlayerInfo(previousValue);
+          }
+        }, 200);
+      });
+
+      playerSelect.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          document.getElementById('playerList').style.display = 'none';
+          initGame();
+        }
+      });
+
+      document.getElementById('hurdlesCount').addEventListener('change', () => {
+        updateScoreTable();
+        initGame();
+      });
+
+      // Exponer funciones necesarias globalmente
+      window.selectPlayer = selectPlayer;
+      window.restartGame = initGame;
+
+      // Escuchar el evento de actualización de la tabla de puntuaciones
+      document.addEventListener('updateScoreTable', updateScoreTable);
+
+      // Inicializar el juego cuando la página cargue
+      window.addEventListener('load', () => {
+        updatePlayerInfo('Invitado');
+        updateScoreTable();
+        initGame();
+      });
     </script>
   </body>
 </html>
