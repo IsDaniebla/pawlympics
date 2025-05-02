@@ -169,6 +169,7 @@ export class Game {
         this.currentHurdle = 1;
         this.successfulHurdles = 0;
         this.gameOver = false;
+        this.effects.setGameOver(false); // Actualizar el estado en los efectos
         this.gameOverStartTime = 0;
         this.isJumping = false;
         this.isFailedJump = false;
@@ -239,13 +240,17 @@ export class Game {
         this.ctx.fillStyle = 'white';
         for (const cloud of this.clouds) {
             // Ajustar la posición X con el desplazamiento más lento para las nubes
-            let adjustedX = cloud.x - (this.terrainOffset * 0.3);
-            
-            // Si la nube sale completamente de la pantalla por la izquierda
-            if (adjustedX < -cloud.width) {
-                cloud.x += this.canvas.width + cloud.width + 100;
-                cloud.y = Math.random() * 100 + 20; // Variar la altura al reaparecer
+            // Solo actualizar la posición si el juego no está terminado
+            let adjustedX = cloud.x;
+            if (!this.gameOver) {
                 adjustedX = cloud.x - (this.terrainOffset * 0.3);
+                
+                // Si la nube sale completamente de la pantalla por la izquierda
+                if (adjustedX < -cloud.width) {
+                    cloud.x += this.canvas.width + cloud.width + 100;
+                    cloud.y = Math.random() * 100 + 20; // Variar la altura al reaparecer
+                    adjustedX = cloud.x - (this.terrainOffset * 0.3);
+                }
             }
 
             // Dibujar la nube usando formas suaves
@@ -955,6 +960,7 @@ export class Game {
             } else {
                 if (this.currentHurdle >= this.totalHurdles) {
                     this.gameOver = true;
+                    this.effects.setGameOver(true); // Actualizar el estado en los efectos
                 } else if (this.dog.hasReturnedToStart()) {
                     this.nextHurdle();
                 }
@@ -977,6 +983,7 @@ export class Game {
             } else {
                 if (this.currentHurdle >= this.totalHurdles) {
                     this.gameOver = true;
+                    this.effects.setGameOver(true); // Actualizar el estado en los efectos
                 } else {
                     this.nextHurdle();
                 }

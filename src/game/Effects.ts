@@ -19,6 +19,15 @@ export class Effects {
     private readonly gravity: number = 0.15;
     private canvas: HTMLCanvasElement | null = null;
     private landedParticles: Particle[] = [];
+    private isGameOver: boolean = false;
+
+    public setGameOver(isGameOver: boolean) {
+        this.isGameOver = isGameOver;
+        if (!isGameOver) {
+            // Limpiar las partículas acumuladas cuando el juego se reinicia
+            this.landedParticles = [];
+        }
+    }
 
     public createSuccessEffect(x: number, y: number) {
         // Estrellas y brillos para salto exitoso
@@ -132,29 +141,33 @@ export class Effects {
                 if (particle.vy > 4) particle.vy = 4;
                 
                 // Efecto de oscilación muy suave
-                particle.vx += Math.sin(Date.now() * 0.001) * 0.01; // Reducido de 0.1 a 0.01
+                particle.vx += Math.sin(Date.now() * 0.001) * 0.01;
                 
                 // Actualizar rotación
                 particle.rotation += particle.rotationSpeed;
                 
                 // Rebotar en los bordes laterales con menos energía
                 if (particle.x < 0 || particle.x > this.canvas.width) {
-                    particle.vx *= -0.5; // Reducido de -0.8 a -0.5
+                    particle.vx *= -0.5;
                 }
                 
                 // Comprobar si ha llegado al suelo
                 if (particle.y >= floorY) {
-                    particle.y = floorY;
-                    particle.landed = true;
-                    particle.rotation = particle.finalRotation;
-                    this.landedParticles.push(particle);
+                    if (this.isGameOver) {
+                        // Durante el game over, acumular las partículas
+                        particle.y = floorY;
+                        particle.landed = true;
+                        particle.rotation = particle.finalRotation;
+                        this.landedParticles.push(particle);
+                    }
+                    // Eliminar la partícula de las activas
                     this.particles.splice(i, 1);
                 }
             }
         }
 
-        // Limitar el número de partículas acumuladas
-        if (this.landedParticles.length > 100) { // Reducido de 200 a 100
+        // Limitar el número de partículas acumuladas solo durante el game over
+        if (this.isGameOver && this.landedParticles.length > 100) {
             this.landedParticles.splice(0, this.landedParticles.length - 100);
         }
     }
