@@ -1,12 +1,12 @@
 export class Dog {
     private x: number;
     private y: number;
-    private baseY: number;
-    private baseX: number;
+
+
     private jumpHeight: number = 0;
     private jumpVelocity: number = 0;
-    private horizontalVelocity: number = 0;
-    private gravity: number = 0.5;
+
+
     private isStumbling: boolean = false;
     private rotationAngle: number = 0;
     private tailWag: number = 0;
@@ -16,7 +16,7 @@ export class Dog {
     private isBlinking: boolean = false;
     private blinkTimer: number = 0;
     private tongueOut: number = 0;
-    private happiness: number = 1;
+
     private isJumping: boolean = false;
     private targetX: number = 0;
     private jumpStartX: number = 0;
@@ -36,9 +36,9 @@ export class Dog {
 
     constructor(x: number, y: number) {
         this.x = x;
-        this.baseX = x;
+
         this.y = y;
-        this.baseY = y;
+
         this.INITIAL_X = x; // Guardar la posición inicial
     }
 
@@ -52,7 +52,7 @@ export class Dog {
 
     public setX(x: number): void {
         this.x = x;
-        this.baseX = x;
+
     }
 
     private startJump(verticalVelocity: number, targetX: number) {
@@ -67,7 +67,7 @@ export class Dog {
     public perfectJump(hurdleX: number) {
         this.startJump(-15, hurdleX);
         this.isStumbling = false;
-        this.happiness = 1;
+
         this.tongueOut = 1;
         setTimeout(() => {
             this.startReturn();
@@ -77,7 +77,7 @@ export class Dog {
     public normalJump(hurdleX: number) {
         this.startJump(-12, hurdleX);
         this.isStumbling = false;
-        this.happiness = 1;
+
         setTimeout(() => {
             this.startReturn();
         }, this.jumpDuration * 16);
@@ -87,7 +87,7 @@ export class Dog {
         this.startJump(-5, hurdleX + 100);
         this.isStumbling = true;
         this.rotationAngle = 0;
-        this.happiness = 1;
+
         this.recoveryTimer = 0;
         this.isRecovering = false;
         this.isReturning = false;
@@ -95,13 +95,13 @@ export class Dog {
 
     public reset(x: number) {
         this.x = x;
-        this.baseX = x;
+
         this.jumpHeight = 0;
         this.jumpVelocity = 0;
-        this.horizontalVelocity = 0;
+
         this.isStumbling = false;
         this.rotationAngle = 0;
-        this.happiness = 1;
+
         this.isJumping = false;
         this.jumpProgress = 0;
         this.recoveryTimer = 0;
@@ -112,43 +112,43 @@ export class Dog {
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(angle);
-        
+
         // Pata superior
         ctx.fillStyle = '#8B4513';
         ctx.fillRect(-3, 0, 6, 15);
-        
+
         // Pata inferior
         ctx.translate(0, 15);
         ctx.rotate(Math.PI / 8);
         ctx.fillRect(-3, 0, 6, 10);
-        
+
         // Pie
         ctx.translate(0, 10);
         ctx.fillStyle = '#654321';
         ctx.beginPath();
         ctx.ellipse(0, 0, 5, 3, 0, 0, Math.PI * 2);
         ctx.fill();
-        
+
         ctx.restore();
     }
 
     public update() {
         if (this.isJumping) {
             this.jumpProgress++;
-            
+
             const progress = this.jumpProgress / this.jumpDuration;
             const jumpDistance = this.targetX - this.jumpStartX;
-            
+
             this.x = this.jumpStartX + (jumpDistance * progress);
-            
+
             const verticalProgress = progress * 2 - 1;
             this.jumpHeight = -75 * (1 - (verticalProgress * verticalProgress));
-            
+
             if (this.jumpProgress >= this.jumpDuration) {
                 this.isJumping = false;
                 this.jumpHeight = 0;
                 this.x = this.targetX;
-                this.baseX = this.x;
+
             }
         }
 
@@ -157,14 +157,14 @@ export class Dog {
             const distanceToTarget = this.targetReturnX - this.x;
             if (Math.abs(distanceToTarget) > this.returnSpeed) {
                 this.x += Math.sign(distanceToTarget) * this.returnSpeed;
-                this.baseX = this.x;
+
                 // Aumentar la velocidad de movimiento de las patas durante el retorno
                 this.legPhase += 0.4;
             } else {
                 this.x = this.targetReturnX;
-                this.baseX = this.targetReturnX;
+
                 this.isReturning = false;
-                this.happiness = 1; // El perro vuelve a estar completamente feliz al llegar
+
             }
         }
 
@@ -174,7 +174,7 @@ export class Dog {
                 if (this.rotationAngle >= Math.PI / 2) {
                     this.rotationAngle = Math.PI / 2;
                     this.recoveryTimer++;
-                    
+
                     if (this.recoveryTimer >= this.RECOVERY_DELAY) {
                         this.isRecovering = true;
                         this.recoveryTimer = 0;
@@ -184,12 +184,12 @@ export class Dog {
                 this.recoveryTimer++;
                 const recoveryProgress = this.recoveryTimer / this.RECOVERY_DURATION;
                 this.rotationAngle = Math.PI / 2 * (1 - recoveryProgress);
-                
+
                 if (this.recoveryTimer >= this.RECOVERY_DURATION) {
                     this.isStumbling = false;
                     this.isRecovering = false;
                     this.rotationAngle = 0;
-                    this.happiness = 0.9;
+
                     this.startReturn();
                 }
             }
@@ -203,7 +203,7 @@ export class Dog {
                 this.legPhase += 0.3;
             }
         }
-        
+
         // Parpadeo aleatorio
         this.blinkTimer++;
         if (this.blinkTimer > 100 && Math.random() < 0.02) {
@@ -225,7 +225,7 @@ export class Dog {
 
     public draw(ctx: CanvasRenderingContext2D) {
         ctx.save();
-        
+
         // Aplicar transformaciones base
         ctx.translate(this.x, this.y + this.jumpHeight);
         if (this.isStumbling) {
@@ -270,28 +270,28 @@ export class Dog {
         ctx.beginPath();
         ctx.ellipse(10, -5, 8, 6, Math.PI / 4, 0, Math.PI * 2);
         ctx.fill();
-        
+
         // Cabeza con movimiento más sutil
         ctx.save();
         // Ajustar el movimiento de la cabeza según el estado
-        const headBobAmount = this.isStumbling ? 
-            0 : 
+        const headBobAmount = this.isStumbling ?
+            0 :
             (this.jumpVelocity !== 0 ? Math.sin(this.legPhase * 0.5) * 2 : 0);
         const headTiltAmount = this.isStumbling ? -0.2 : (this.tongueOut > 0 ? 0.1 : 0);
         ctx.translate(20, -15 + headBobAmount);
         ctx.rotate(headTiltAmount);
-        
+
         // Orejas con movimiento más sutil
         ctx.save();
         const earWiggleAmount = this.isStumbling ? 0 : Math.sin(this.earWiggle) * 0.1;
-        
+
         // Oreja izquierda
         ctx.rotate(-0.2 + earWiggleAmount);
         ctx.fillStyle = '#8B4513';
         ctx.beginPath();
         ctx.ellipse(-8, -8, 6, 12, -0.2, 0, Math.PI * 2);
         ctx.fill();
-        
+
         // Oreja derecha
         ctx.rotate(0.4);
         ctx.beginPath();
@@ -334,8 +334,8 @@ export class Dog {
             ctx.beginPath();
             ctx.moveTo(12, 5);
             const tongueLength = 10 * this.tongueOut;
-            ctx.quadraticCurveTo(12 + tongueLength/2, 10, 12 + tongueLength, 5);
-            ctx.quadraticCurveTo(12 + tongueLength/2, 8, 12, 5);
+            ctx.quadraticCurveTo(12 + tongueLength / 2, 10, 12 + tongueLength, 5);
+            ctx.quadraticCurveTo(12 + tongueLength / 2, 8, 12, 5);
             ctx.fill();
         }
 
@@ -356,7 +356,7 @@ export class Dog {
                 };
             } else {
                 // Durante la recuperación, las patas vuelven a su posición normal con un ligero movimiento
-                const recoveryProgress = this.recoveryTimer / this.RECOVERY_DURATION;
+
                 const walkPhase = Math.sin(this.legPhase) * 0.2;
                 return {
                     frontLeft: walkPhase,
@@ -392,7 +392,7 @@ export class Dog {
     private startReturn() {
         this.isReturning = true;
         this.targetReturnX = this.INITIAL_X;
-        this.happiness = 1;
+
         this.returnSpeed = this.MAX_RETURN_SPEED;
     }
 

@@ -28,22 +28,17 @@ export class Game {
     private colorChangeDuration: number = 800;
     private terrainOffset: number = 0;
     private terrainSpeed: number = 2;
-    private clouds: Array<{x: number, y: number, width: number}> = [];
-    private grass: Array<{x: number, y: number, height: number}> = [];
-    private flowers: Array<{x: number, y: number, color: string, size: number}> = [];
+    private clouds: Array<{ x: number, y: number, width: number }> = [];
+    private grass: Array<{ x: number, y: number, height: number }> = [];
+    private flowers: Array<{ x: number, y: number, color: string, size: number }> = [];
     private successfulHurdles: number = 0;
-    private colorPoints = {
-        'red': 0,
-        'yellow': 10,
-        'orange': 5,
-        'green': 15
-    };
+
     private readonly INITIAL_HURDLE_X: number = 600;
     private readonly DOG_X: number = 150;
-    private hurdleSpeed: number = 0;
-    private baseHurdleSpeed: number = 0;
-    private readonly SPEED_MULTIPLIER: number = 2.5;
-    private lastUpdateTime: number | null = null;
+
+
+
+
     private isTrafficLightStopped: boolean = false;
     private hasClickedThisHurdle: boolean = false;
     private trafficLightY: number = 0;
@@ -53,10 +48,10 @@ export class Game {
     private trafficLightWingAngle: number = 0;
     private trafficLightWingSpeed: number = 0.1;
     private readonly TRAFFIC_LIGHT_X: number = 105;
-    private readonly TRAFFIC_LIGHT_CLOUD_INDEX: number = 0;
+
     private readonly JUMP_DETECTION_DISTANCE: number = 100;
     private readonly JUMP_LANDING_OFFSET: number = 25;
-    private isFailedJump: boolean = false;
+
     private readonly MIN_FLOWERS: number = 30;
     private isTransitioning: boolean = false;
     private nextHurdleReady: boolean = false;
@@ -112,7 +107,7 @@ export class Game {
 
         this.muteButton = document.getElementById('muteButton') as HTMLButtonElement;
         this.volumeSlider = document.getElementById('volumeSlider') as HTMLInputElement;
-        
+
         this.initializeAudioControls();
         this.initializeBackgroundMusic();
         this.initializeClouds();
@@ -162,7 +157,7 @@ export class Game {
         // Inicializar flores
         this.flowers = [];
         const flowerColors = ['#FF69B4', '#FFB6C1', '#FFA07A', '#98FB98', '#87CEEB', '#DDA0DD'];
-        
+
         // Distribuir flores por todo el canvas desde el inicio
         for (let x = 0; x < this.canvas.width + 100; x += 30) {
             this.flowers.push({
@@ -204,7 +199,7 @@ export class Game {
         this.effects.setGameOver(false); // Actualizar el estado en los efectos
         this.gameOverStartTime = 0;
         this.isJumping = false;
-        this.isFailedJump = false;
+
         this.isTransitioning = false;
         this.nextHurdleReady = false;
         this.trafficLightColors = ['red'];
@@ -223,19 +218,19 @@ export class Game {
         this.initializeGrassAndFlowers();
         this.effects = new Effects(); // Reiniciar los efectos
         this.effects.clearAllParticles(); // Limpiar todas las partículas existentes
-        
+
         // Agregar los event listeners
         document.addEventListener('keydown', this.boundKeydownHandler);
         this.canvas.addEventListener('click', this.boundClickHandler);
 
         // Inicializar todas las posiciones posibles de flechas
         this.allArrowPositions = [];
-        
+
         // Añadir posiciones verticales
         for (const x of this.VERTICAL_ARROW_POSITIONS) {
             this.allArrowPositions.push({ x, y: 0, isVertical: true });
         }
-        
+
         // Añadir posiciones horizontales
         for (const y of this.HORIZONTAL_ARROW_POSITIONS) {
             this.allArrowPositions.push({ x: this.canvas.width, y, isVertical: false });
@@ -251,18 +246,18 @@ export class Game {
     private generateColorSequence() {
         // Comenzar con rojo
         this.trafficLightColors = ['red'];
-        
+
         // Crear array de colores intermedios
         const middleColors = ['yellow', 'orange', 'green'];
-        
+
         // En modo demostración, el color seleccionado será el segundo
         if (this.isInDemoMode) {
             // Elegir un color aleatorio para el salto (será el segundo color)
             const selectedColor = middleColors[Math.floor(Math.random() * middleColors.length)];
-            
+
             // Agregar el color seleccionado como segundo color
             this.trafficLightColors.push(selectedColor);
-            
+
             // Generar 2 colores aleatorios adicionales
             for (let i = 0; i < 2; i++) {
                 // Asegurarnos de que no se repitan colores consecutivos
@@ -270,10 +265,10 @@ export class Game {
                 do {
                     nextColor = middleColors[Math.floor(Math.random() * middleColors.length)];
                 } while (this.trafficLightColors[this.trafficLightColors.length - 1] === nextColor);
-                
+
                 this.trafficLightColors.push(nextColor);
             }
-            
+
             // Terminar con rojo
             this.trafficLightColors.push('red');
         } else {
@@ -292,19 +287,19 @@ export class Game {
             this.gameOver = true;
             return;
         }
-        
+
         // Solo incrementar el contador si no estamos en modo demostración
         if (!this.isInDemoMode) {
             this.currentHurdle++;
         }
-        
+
         this.dog.reset(this.dog.getX());
         this.isTransitioning = true;
         this.nextHurdleReady = true;
         this.isJumping = false;
         this.isTrafficLightStopped = false;
         this.hasClickedThisHurdle = false;
-        this.isFailedJump = false;
+
         this.generateColorSequence();
         this.currentColorIndex = 0;
         this.lastColorChangeTime = performance.now();
@@ -320,7 +315,7 @@ export class Game {
             let adjustedX = cloud.x;
             if (!this.gameOver) {
                 adjustedX = cloud.x - (this.terrainOffset * 0.3);
-                
+
                 // Si la nube sale completamente de la pantalla por la izquierda
                 if (adjustedX < -cloud.width) {
                     cloud.x += this.canvas.width + cloud.width + 100;
@@ -341,20 +336,20 @@ export class Game {
 
     private drawPath() {
         const pathY = this.canvas.height - 90;
-        
+
         // Fondo del camino (pavimento gris oscuro)
         this.ctx.fillStyle = '#404040';
         this.ctx.fillRect(0, pathY, this.canvas.width, 40);
-        
+
         // Líneas blancas del camino
         this.ctx.strokeStyle = '#FFFFFF';
         this.ctx.lineWidth = 3;
-        
+
         // Dibujar líneas discontinuas con movimiento invertido
         const lineLength = 30;
         const lineGap = 40;
         const totalLength = lineLength + lineGap;
-        
+
         // Invertir la dirección del movimiento usando el terrainOffset negativo
         for (let x = -totalLength - (this.terrainOffset % totalLength); x < this.canvas.width + totalLength; x += totalLength) {
             this.ctx.beginPath();
@@ -365,8 +360,7 @@ export class Game {
     }
 
     private drawTrafficLight() {
-        const cloudX = this.clouds[this.TRAFFIC_LIGHT_CLOUD_INDEX].x - (this.terrainOffset * 0.3);
-        const cloudY = this.clouds[this.TRAFFIC_LIGHT_CLOUD_INDEX].y;
+
 
         // Función para dibujar un ala con plumas
         const drawWing = (isLeft: boolean) => {
@@ -374,26 +368,26 @@ export class Game {
             const baseY = this.trafficLightY + 20;
             const wingSpread = 60;
             const numFeathers = 10;
-            
+
             this.ctx.save();
             this.ctx.translate(baseX, baseY);
-            
+
             // Ángulo base para el movimiento
             const baseAngle = Math.sin(this.trafficLightWingAngle) * 0.3 * (isLeft ? -1 : 1);
-            
+
             // Dibujar cada pluma
             for (let i = 0; i < numFeathers; i++) {
                 const featherLength = wingSpread - (i * 3);
                 const featherWidth = 6;
                 const angleSpread = Math.PI / 2.5;
                 const featherAngle = (i / (numFeathers - 1)) * angleSpread;
-                const finalAngle = isLeft ? 
-                    Math.PI + featherAngle + baseAngle : 
+                const finalAngle = isLeft ?
+                    Math.PI + featherAngle + baseAngle :
                     -featherAngle + baseAngle;
 
                 this.ctx.save();
                 this.ctx.rotate(finalAngle);
-                
+
                 // Dibujar la pluma
                 this.ctx.fillStyle = '#FFFFFF';
                 this.ctx.beginPath();
@@ -417,10 +411,10 @@ export class Game {
                 this.ctx.strokeStyle = 'rgba(0,0,0,0.1)';
                 this.ctx.lineWidth = 0.5;
                 this.ctx.stroke();
-                
+
                 this.ctx.restore();
             }
-            
+
             this.ctx.restore();
         };
 
@@ -497,17 +491,17 @@ export class Game {
         // Dibujar hierba individual
         this.ctx.strokeStyle = '#228B22';
         this.ctx.lineWidth = 1;
-        
+
         for (const blade of this.grass) {
             let adjustedX = blade.x - this.terrainOffset;
-            
+
             if (adjustedX < -10) {
                 blade.x += this.canvas.width + 20;
                 adjustedX = blade.x - this.terrainOffset;
             }
-            
+
             const waveOffset = Math.sin((blade.x + this.terrainOffset) * 0.05) * 5;
-            
+
             this.ctx.beginPath();
             this.ctx.moveTo(adjustedX, blade.y);
             this.ctx.quadraticCurveTo(
@@ -522,10 +516,10 @@ export class Game {
 
     private drawFlowers() {
         const flowerColors = ['#FF69B4', '#FFB6C1', '#FFA07A', '#98FB98', '#87CEEB', '#DDA0DD'];
-        
+
         for (const flower of this.flowers) {
             let adjustedX = flower.x - this.terrainOffset;
-            
+
             // Si la flor sale por la izquierda, reposicionarla a la derecha
             if (adjustedX < -20) {
                 flower.x += this.canvas.width + 40;
@@ -534,7 +528,7 @@ export class Game {
                 flower.size = Math.random() * 3 + 2;
                 adjustedX = flower.x - this.terrainOffset;
             }
-            
+
             // Asegurarse de que siempre haya suficientes flores
             if (this.flowers.length < this.MIN_FLOWERS) {
                 this.flowers.push({
@@ -544,7 +538,7 @@ export class Game {
                     size: Math.random() * 3 + 2
                 });
             }
-            
+
             // Tallo de la flor
             this.ctx.strokeStyle = '#228B22';
             this.ctx.lineWidth = 1;
@@ -559,7 +553,7 @@ export class Game {
                 const angle = (i * Math.PI * 2) / 5;
                 const petalX = adjustedX + Math.cos(angle) * flower.size;
                 const petalY = flower.y - 35 + Math.sin(angle) * flower.size;
-                
+
                 this.ctx.beginPath();
                 this.ctx.arc(petalX, petalY, flower.size, 0, Math.PI * 2);
                 this.ctx.fill();
@@ -573,61 +567,6 @@ export class Game {
         }
     }
 
-    private drawPointsInfo() {
-        // Panel de información de puntos con más padding
-        const panelPadding = 20;
-        const panelWidth = 200;
-        const panelHeight = 180; // Aumentado para más espacio
-        const startX = this.canvas.width - panelWidth - 10;
-        const startY = 10;
-
-        // Fondo del panel con más padding
-        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-        this.ctx.fillRect(startX, startY, panelWidth, panelHeight);
-        
-        this.ctx.fillStyle = 'black';
-        this.ctx.font = 'bold 20px Arial';
-        this.ctx.textAlign = 'left';
-        
-        // Título
-        this.ctx.fillText('Puntos por Color:', startX + panelPadding, startY + 25);
-        
-        const circleRadius = 8;
-        const textStartX = startX + panelPadding + 25;
-        const circleStartX = startX + panelPadding;
-        
-        // Verde
-        this.ctx.fillStyle = 'green';
-        this.ctx.beginPath();
-        this.ctx.arc(circleStartX + circleRadius, startY + 50, circleRadius, 0, Math.PI * 2);
-        this.ctx.fill();
-        this.ctx.fillStyle = 'black';
-        this.ctx.fillText('Verde: 15 pts', textStartX, startY + 55);
-        
-        // Amarillo
-        this.ctx.fillStyle = 'yellow';
-        this.ctx.beginPath();
-        this.ctx.arc(circleStartX + circleRadius, startY + 85, circleRadius, 0, Math.PI * 2);
-        this.ctx.fill();
-        this.ctx.fillStyle = 'black';
-        this.ctx.fillText('Amarillo: 10 pts', textStartX, startY + 90);
-        
-        // Naranja
-        this.ctx.fillStyle = 'orange';
-        this.ctx.beginPath();
-        this.ctx.arc(circleStartX + circleRadius, startY + 120, circleRadius, 0, Math.PI * 2);
-        this.ctx.fill();
-        this.ctx.fillStyle = 'black';
-        this.ctx.fillText('Naranja: 5 pts', textStartX, startY + 125);
-        
-        // Rojo
-        this.ctx.fillStyle = 'red';
-        this.ctx.beginPath();
-        this.ctx.arc(circleStartX + circleRadius, startY + 155, circleRadius, 0, Math.PI * 2);
-        this.ctx.fill();
-        this.ctx.fillStyle = 'black';
-        this.ctx.fillText('Rojo: 0 pts', textStartX, startY + 160);
-    }
 
     private updateGameInfo() {
         const currentHurdleElement = document.getElementById('currentHurdle');
@@ -699,34 +638,34 @@ export class Game {
             // Crear efecto de confeti solo durante los primeros 4 segundos
             const timeSinceGameOver = performance.now() - this.gameOverStartTime;
             if (timeSinceGameOver < this.CONFETTI_DURATION && Math.random() < 0.3) {
-                this.effects.createGameOverEffect(this.canvas.width / 2, this.canvas.height / 2);
+                this.effects.createGameOverEffect();
             }
-            
+
             // Dibujar efectos (confeti)
             this.effects.draw(this.ctx);
-            
+
             // Texto de juego terminado
             this.ctx.fillStyle = 'white';
             this.ctx.font = 'bold 48px Arial';
             this.ctx.textAlign = 'center';
-            this.ctx.fillText('¡Juego Terminado!', this.canvas.width/2, this.canvas.height/2 - 60);
-            
+            this.ctx.fillText('¡Juego Terminado!', this.canvas.width / 2, this.canvas.height / 2 - 60);
+
             // Mostrar resultados finales
             this.ctx.font = 'bold 36px Arial';
-            
+
             // Mensaje específico si perdió por saltar en rojo
             const currentColor = this.trafficLightColors[this.currentColorIndex];
             if (currentColor === 'red' && this.isJumping) {
-                this.ctx.fillText('¡Has saltado en rojo!', this.canvas.width/2, this.canvas.height/2);
+                this.ctx.fillText('¡Has saltado en rojo!', this.canvas.width / 2, this.canvas.height / 2);
             }
-            
-            this.ctx.fillText(`Vallas Superadas: ${this.successfulHurdles}/${this.totalHurdles}`, this.canvas.width/2, this.canvas.height/2 + 50);
-            this.ctx.fillText(`Puntuación Final: ${this.score} puntos`, this.canvas.width/2, this.canvas.height/2 + 100);
-            
+
+            this.ctx.fillText(`Vallas Superadas: ${this.successfulHurdles}/${this.totalHurdles}`, this.canvas.width / 2, this.canvas.height / 2 + 50);
+            this.ctx.fillText(`Puntuación Final: ${this.score} puntos`, this.canvas.width / 2, this.canvas.height / 2 + 100);
+
             // Instrucciones para reiniciar
             this.ctx.font = 'bold 24px Arial';
-            this.ctx.fillText('Presiona ESPACIO para reiniciar', this.canvas.width/2, this.canvas.height/2 + 160);
-            
+            this.ctx.fillText('Presiona ESPACIO para reiniciar', this.canvas.width / 2, this.canvas.height / 2 + 160);
+
             // Restablecer alineación del texto
             this.ctx.textAlign = 'left';
         } else {
@@ -755,7 +694,7 @@ export class Game {
     private updateVolumeLines(volume: number) {
         const lines = document.querySelectorAll('.volume-line');
         const thresholds = [0.33, 0.66, 1];
-        
+
         lines.forEach((line, index) => {
             if (volume >= thresholds[index]) {
                 (line as HTMLElement).style.backgroundColor = 'white';
@@ -780,7 +719,7 @@ export class Game {
         if (this.backgroundMusic) {
             this.isMuted = !this.isMuted;
             this.soundEffects.toggleMute();
-            
+
             if (this.isMuted) {
                 this.previousVolume = this.backgroundMusic.volume;
                 this.backgroundMusic.volume = 0;
@@ -841,7 +780,7 @@ export class Game {
     private startBackgroundMusic() {
         if (this.backgroundMusic && this.isMusicLoaded && !this.isMusicPlaying && !this.gameOver) {
             const playPromise = this.backgroundMusic.play();
-            
+
             if (playPromise !== undefined) {
                 playPromise
                     .then(() => {
@@ -869,10 +808,10 @@ export class Game {
             // Detener el semáforo en el color actual y acelerar todo el movimiento
             this.isTrafficLightStopped = true;
             this.hasClickedThisHurdle = true;
-            
+
             // Aumentar la velocidad del terreno y la valla
             this.terrainSpeed = this.BASE_TERRAIN_SPEED * this.ACCELERATED_SPEED_MULTIPLIER;
-            this.hurdleSpeed = this.baseHurdleSpeed * this.ACCELERATED_SPEED_MULTIPLIER;
+
         }
         // Prevenir comportamientos por defecto
         e.preventDefault();
@@ -887,7 +826,7 @@ export class Game {
             // Prevenir el comportamiento por defecto del espacio
             e.preventDefault();
         }
-        
+
         // En modo demostración, permitir que el jugador salte con la tecla de flecha arriba
         if (this.isInDemoMode && e.code === 'ArrowUp' && !this.isJumping && !this.dog.isInRecovery()) {
             const distanceToHurdle = Math.abs(this.hurdle.getX() - this.DOG_X);
@@ -899,8 +838,6 @@ export class Game {
 
     private update() {
         const currentTime = performance.now();
-        const deltaTime = this.lastUpdateTime ? currentTime - this.lastUpdateTime : 0;
-        this.lastUpdateTime = currentTime;
 
         // Actualizar efectos siempre, incluso en game over
         this.effects.update();
@@ -908,7 +845,7 @@ export class Game {
         if (this.gameOver) return;
 
         this.dog.update();
-            
+
         if (!this.isMusicPlaying && this.isMusicLoaded) {
             this.startBackgroundMusic();
         }
@@ -917,38 +854,26 @@ export class Game {
 
         // Actualizar el terreno y la valla si el perro no está en recuperación
         if (!this.dog.isInRecovery()) {
-            this.updateHurdlePosition(deltaTime);
+            this.updateHurdlePosition();
             if (this.dog.isInReturnState()) {
                 this.terrainOffset += this.terrainSpeed * 1.2;
             } else {
                 this.terrainOffset += this.terrainSpeed;
             }
         }
-        
+
         this.updateTrafficLight(currentTime);
         this.updateTrafficLightPosition(currentTime);
     }
 
-    private checkCollisionWithHurdle() {
-        const dogX = this.dog.getX();
-        const hurdleX = this.hurdle.getX();
-        
-        if (Math.abs(dogX - hurdleX) < 30) {
-            if (!this.isJumping) {
-                this.dog.failJump(hurdleX);
-                setTimeout(() => {
-                    this.nextHurdle();
-                }, 1500);
-            }
-        }
-    }
+
 
     private checkCollision(rect1: { x: number, y: number, width: number, height: number },
-                         rect2: { x: number, y: number, width: number, height: number }): boolean {
+        rect2: { x: number, y: number, width: number, height: number }): boolean {
         return rect1.x < rect2.x + rect2.width &&
-               rect1.x + rect1.width > rect2.x &&
-               rect1.y < rect2.y + rect2.height &&
-               rect1.y + rect1.height > rect2.y;
+            rect1.x + rect1.width > rect2.x &&
+            rect1.y < rect2.y + rect2.height &&
+            rect1.y + rect1.height > rect2.y;
     }
 
     private startGame() {
@@ -975,23 +900,21 @@ export class Game {
             // Para la primera valla o al iniciar el juego, usar la posición inicial
             this.hurdle = new Hurdle(this.INITIAL_HURDLE_X, this.canvas.height - 90);
         }
-        
-        // Calcular la velocidad base basada en la duración del semáforo y la distancia
-        const totalDistance = this.INITIAL_HURDLE_X - this.DOG_X;
-        const totalTime = this.colorChangeDuration * this.trafficLightColors.length;
-        this.baseHurdleSpeed = totalDistance / totalTime;
-        
+
+
+
+
         // Si estamos en transición y es la nueva valla, usar la velocidad base
         if (this.isTransitioning && this.nextHurdleReady) {
-            this.hurdleSpeed = this.baseHurdleSpeed;
+
             this.isTransitioning = false; // Resetear el estado de transición
             this.nextHurdleReady = false; // Resetear el estado de la nueva valla
         } else {
-            this.hurdleSpeed = this.baseHurdleSpeed;
+
         }
     }
 
-    private updateHurdlePosition(deltaTime: number) {
+    private updateHurdlePosition() {
         if (this.gameOver) return;
 
         const currentX = this.hurdle.getX();
@@ -1005,7 +928,7 @@ export class Game {
         // Solo evaluar el salto si el perro no está retornando y no está en transición
         if (!this.isJumping && !this.dog.isInRecovery() && !this.dog.isInReturnState() && !this.isTransitioning) {
             const distanceToHurdle = Math.abs(newX - this.DOG_X);
-            
+
             // En modo demostración, saltar cuando la valla esté cerca y el semáforo esté detenido
             if (this.isInDemoMode && this.isTrafficLightStopped && distanceToHurdle < this.JUMP_DETECTION_DISTANCE) {
                 this.evaluateJump();
@@ -1028,7 +951,7 @@ export class Game {
         if (!this.hasClickedThisHurdle) {
             // Si no ha hecho clic, es un fallo automático
             this.dog.failJump(hurdleX + this.JUMP_LANDING_OFFSET);
-            this.isFailedJump = true;
+
             this.effects.createFailEffect(this.dog.getX(), this.canvas.height - 90);
             this.soundEffects.playSound('fail_jump');
             this.handleFailedJump();
@@ -1037,9 +960,9 @@ export class Game {
 
         // Evaluar el salto basado en el color actual
         const currentColor = this.trafficLightColors[this.currentColorIndex];
-        const isSuccessfulJump = currentColor === 'green' || 
-                                currentColor === 'yellow' || 
-                                currentColor === 'orange';
+        const isSuccessfulJump = currentColor === 'green' ||
+            currentColor === 'yellow' ||
+            currentColor === 'orange';
 
         if (isSuccessfulJump) {
             if (currentColor === 'green') {
@@ -1062,7 +985,7 @@ export class Game {
             this.handleJumpResult(true);
         } else {
             this.dog.failJump(hurdleX + this.JUMP_LANDING_OFFSET);
-            this.isFailedJump = true;
+
             this.effects.createFailEffect(this.dog.getX(), this.canvas.height - 90);
             this.soundEffects.playSound('fail_jump');
             this.handleFailedJump();
@@ -1081,7 +1004,7 @@ export class Game {
                 }
             }
         };
-        
+
         setTimeout(checkRecovery, 500);
     }
 
@@ -1113,9 +1036,9 @@ export class Game {
 
     private updateTrafficLightPosition(currentTime: number) {
         // Actualizar la posición vertical del semáforo
-        this.trafficLightY = this.trafficLightBaseY + 
+        this.trafficLightY = this.trafficLightBaseY +
             Math.sin(currentTime * this.trafficLightFrequency) * this.trafficLightAmplitude;
-        
+
         // Actualizar el ángulo de las alas
         this.trafficLightWingAngle += this.trafficLightWingSpeed;
         if (this.trafficLightWingAngle >= Math.PI * 2) {
@@ -1144,7 +1067,7 @@ export class Game {
         this.effects.setGameOver(true);
         this.gameOverStartTime = performance.now();
         this.soundEffects.playSound('game_over');
-        
+
         // Guardar la puntuación
         this.scoreSystem.addScore(this.playerName, this.score, this.totalHurdles);
 
@@ -1161,27 +1084,27 @@ export class Game {
 
         this.arrowSpawnCounter = 0;
         this.arrowCounter++;
-        
+
         const dogX = this.dog.getX();
         const dogY = this.dog.getY();
         const position = this.allArrowPositions[Math.floor(Math.random() * this.allArrowPositions.length)];
-        
+
         let targetX: number, targetY: number;
-        
+
         if (position.isVertical) {
             targetX = position.x + (Math.random() - 0.5) * 300;
             targetY = dogY - Math.random() * 100;
-            
+
             if (Math.random() < 0.6) {
                 targetX = dogX - 25 + Math.random() * 50;
             }
         } else {
             targetX = dogX;
-            targetY = Math.random() < 0.7 ? 
+            targetY = Math.random() < 0.7 ?
                 dogY - 10 + Math.random() * 20 :  // Apuntar al cuerpo
                 dogY - 40 + Math.random() * 80;   // Variar altura
         }
-        
+
         const speed = position.isVertical ? this.ARROW_SPEED : this.HORIZONTAL_ARROW_SPEED;
         this.arrows.push(new Arrow(position.x, position.y, speed, targetX, targetY, !position.isVertical));
     }
@@ -1191,12 +1114,12 @@ export class Game {
         this.arrows = this.arrows.filter(arrow => {
             arrow.update();
             const pos = arrow.getPosition();
-            
+
             // Verificar si la flecha sale de la pantalla o expira
             if (pos.y > this.canvas.height || pos.x < 0 || pos.x > this.canvas.width || arrow.isExpired()) {
                 return false;
             }
-            
+
             // Verificar colisión con el escudo usando la posición actual del perro
             const arrowBounds = arrow.getBounds();
             if (this.checkShieldCollision(arrowBounds)) {
@@ -1204,7 +1127,7 @@ export class Game {
                 this.soundEffects.playSound('shield_block');
                 return false;
             }
-            
+
             return true;
         });
 
@@ -1227,7 +1150,7 @@ export class Game {
         const rect = this.canvas.getBoundingClientRect();
         this.mouseX = e.clientX - rect.left;
         this.mouseY = e.clientY - rect.top;
-        
+
         // Calcular el ángulo del escudo basado en la posición del ratón relativa al perro
         const dogX = this.dog.getX();
         const dogY = this.dog.getY();
@@ -1237,30 +1160,30 @@ export class Game {
     private drawShield(): void {
         const dogX = this.dog.getX();
         const dogY = this.dog.getY();
-        
+
         // Dibujar el área de colisión (semitransparente)
         this.ctx.save();
         this.ctx.beginPath();
         this.ctx.arc(
-            dogX, 
-            dogY, 
+            dogX,
+            dogY,
             this.SHIELD_COLLISION_RADIUS,
             this.shieldAngle - this.SHIELD_COLLISION_ARC / 2,
             this.shieldAngle + this.SHIELD_COLLISION_ARC / 2
         );
         this.ctx.fillStyle = 'rgba(100, 200, 255, 0.1)';
         this.ctx.fill();
-        
+
         // Dibujar el escudo principal
         this.ctx.beginPath();
         this.ctx.arc(
-            dogX, 
-            dogY, 
+            dogX,
+            dogY,
             this.SHIELD_RADIUS,
             this.shieldAngle - this.SHIELD_ARC / 2,
             this.shieldAngle + this.SHIELD_ARC / 2
         );
-        
+
         // Gradiente para efecto de energía
         const gradient = this.ctx.createRadialGradient(
             dogX, dogY, this.SHIELD_RADIUS * 0.8,
@@ -1269,20 +1192,20 @@ export class Game {
         gradient.addColorStop(0, 'rgba(0, 150, 255, 0.2)');
         gradient.addColorStop(0.5, 'rgba(0, 150, 255, 0.4)');
         gradient.addColorStop(1, 'rgba(0, 150, 255, 0.6)');
-        
+
         this.ctx.fillStyle = gradient;
         this.ctx.fill();
-        
+
         // Borde brillante
         this.ctx.strokeStyle = 'rgba(100, 200, 255, 0.8)';
         this.ctx.lineWidth = 3;
         this.ctx.stroke();
-        
+
         // Efecto de brillo en los bordes
         this.ctx.beginPath();
         this.ctx.arc(
-            dogX, 
-            dogY, 
+            dogX,
+            dogY,
             this.SHIELD_RADIUS,
             this.shieldAngle - this.SHIELD_ARC / 2,
             this.shieldAngle + this.SHIELD_ARC / 2
@@ -1290,48 +1213,48 @@ export class Game {
         this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
         this.ctx.lineWidth = 2;
         this.ctx.stroke();
-        
+
         this.ctx.restore();
     }
 
     private checkShieldCollision(arrowBounds: { x: number, y: number, width: number, height: number }): boolean {
         const dogX = this.dog.getX();
         const dogY = this.dog.getY();
-        
+
         // Obtener los puntos de la flecha para mejor detección
         const arrowPoints = [
             { x: arrowBounds.x, y: arrowBounds.y },
             { x: arrowBounds.x + arrowBounds.width, y: arrowBounds.y },
             { x: arrowBounds.x + arrowBounds.width, y: arrowBounds.y + arrowBounds.height },
             { x: arrowBounds.x, y: arrowBounds.y + arrowBounds.height },
-            { x: arrowBounds.x + arrowBounds.width/2, y: arrowBounds.y + arrowBounds.height/2 }
+            { x: arrowBounds.x + arrowBounds.width / 2, y: arrowBounds.y + arrowBounds.height / 2 }
         ];
-        
+
         // Verificar cada punto de la flecha
         for (const point of arrowPoints) {
             // Calcular la distancia entre el punto y el centro del escudo
             const distance = Math.sqrt(
-                Math.pow(point.x - dogX, 2) + 
+                Math.pow(point.x - dogX, 2) +
                 Math.pow(point.y - dogY, 2)
             );
-            
+
             // Si el punto está dentro del radio de colisión del escudo
             if (distance <= this.SHIELD_COLLISION_RADIUS) {
                 // Calcular el ángulo del punto respecto al perro
                 const pointAngle = Math.atan2(point.y - dogY, point.x - dogX);
-                
+
                 // Normalizar los ángulos
                 let angleDiff = pointAngle - this.shieldAngle;
                 while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
                 while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-                
+
                 // Si el punto está dentro del arco de colisión del escudo
                 if (Math.abs(angleDiff) <= this.SHIELD_COLLISION_ARC / 2) {
                     return true;
                 }
             }
         }
-        
+
         return false;
     }
 }

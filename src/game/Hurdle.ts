@@ -2,7 +2,7 @@ export class Hurdle {
     private x: number;
     private y: number;
     private height: number = 40; // Reducida la altura general
-    private width: number = 10;
+    
     private readonly postColor: string = '#8B4513'; // Marrón para los postes
     private readonly barColor: string = '#CD853F'; // Marrón más claro para la barra
     private readonly metalColor: string = '#C0C0C0'; // Plateado para detalles metálicos

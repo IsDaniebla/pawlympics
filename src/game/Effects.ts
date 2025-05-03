@@ -77,7 +77,7 @@ export class Effects {
         }
     }
 
-    public createGameOverEffect(x: number, y: number) {
+    public createGameOverEffect() {
         if (!this.canvas) return;
 
         // Colores vibrantes para el confeti
