@@ -254,10 +254,129 @@
         border-radius: 4px;
         width: 70px;
       }
+
+      /* Estilos para el modal de instrucciones */
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.8);
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+      }
+
+      .modal-content {
+        background-color: #ffffff;
+        padding: 2rem;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        max-width: 500px;
+        width: 90%;
+        text-align: center;
+        color: #2c3e50;
+        animation: modalAppear 0.3s ease-out;
+      }
+
+      @keyframes modalAppear {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .modal h2 {
+        color: #2c3e50;
+        margin-bottom: 1.5rem;
+        font-size: 1.8rem;
+      }
+
+      .instructions-text {
+        text-align: left;
+        margin: 1.5rem 0;
+        color: #2c3e50;
+      }
+
+      .instructions-text p {
+        font-weight: bold;
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+      }
+
+      .instructions-text ul {
+        list-style-type: none;
+        padding: 0;
+      }
+
+      .instructions-text li {
+        margin: 1rem 0;
+        padding-left: 2rem;
+        position: relative;
+        color: #34495e;
+      }
+
+      .instructions-text li::before {
+        content: "🐾";
+        position: absolute;
+        left: 0;
+      }
+
+      .start-button {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 25px;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 1rem;
+      }
+
+      .start-button:hover {
+        background-color: #2980b9;
+        transform: scale(1.05);
+      }
+
+      .game-title {
+        font-size: 3rem;
+        color: #2c3e50;
+        margin-bottom: 2rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+      }
     </style>
   </head>
   <body>
     <div class="game-container">
+      <h1 class="game-title">Pawlympics</h1>
+      
+      <!-- Modal de instrucciones -->
+      <div id="instructions-modal" class="modal">
+        <div class="modal-content">
+          <h2>¡Bienvenido a Pawlympics! 🐕</h2>
+          <div class="instructions-text">
+            <p>Instrucciones del juego:</p>
+            <ul>
+              <li>Controla a tu perro atleta usando las flechas del teclado</li>
+              <li>Presiona la flecha ARRIBA para saltar</li>
+              <li>Presiona las flechas IZQUIERDA y DERECHA para ajustar la velocidad</li>
+              <li>¡Salta las vallas en el momento preciso para obtener puntos!</li>
+              <li>Cuanto más preciso sea tu salto, más puntos obtendrás</li>
+            </ul>
+          </div>
+          <button id="start-game" class="start-button">¡Comenzar!</button>
+        </div>
+      </div>
+
       <div class="game-controls">
         <div class="player-select-container">
           <input type="text" id="playerSelect" class="player-select" placeholder="Nombre del jugador">
@@ -278,6 +397,7 @@
         </select>
         <button onclick="restartGame()">Reiniciar Juego</button>
       </div>
+
       <div class="game-info">
         <div class="score-panel">
           <h3>Información del Juego</h3>
@@ -316,6 +436,7 @@
           </div>
         </div>
       </div>
+
       <div style="position: relative;">
         <canvas id="gameCanvas" width="800" height="400"></canvas>
         <div class="audio-controls">
@@ -333,6 +454,7 @@
         </div>
       </div>
     </div>
+
     <script type="module">
       import { Game } from './src/game/Game.ts';
       import { ScoreSystem } from './src/game/ScoreSystem.ts';
@@ -467,6 +589,20 @@
 
       // Inicializar el juego cuando la página cargue
       window.addEventListener('load', () => {
+        // Mostrar el modal de instrucciones al inicio
+        const modal = document.getElementById('instructions-modal');
+        if (modal) {
+          modal.style.display = 'flex';
+        }
+
+        // Configurar el botón de inicio
+        const startButton = document.getElementById('start-game');
+        startButton?.addEventListener('click', () => {
+          if (modal) {
+            modal.style.display = 'none';
+          }
+        });
+
         updatePlayerInfo('Invitado');
         updateScoreTable();
         initGame();
