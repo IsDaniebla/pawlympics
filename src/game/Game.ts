@@ -90,8 +90,8 @@ export class Game {
     private allArrowPositions: { x: number, y: number, isVertical: boolean }[] = [];
     private readonly SHIELD_RADIUS: number = 60;
     private readonly SHIELD_COLLISION_RADIUS: number = 65; // Radio de colisión ligeramente mayor
-    private readonly SHIELD_ARC: number = Math.PI * 0.6; // El arco del escudo cubre 108 grados
-    private readonly SHIELD_COLLISION_ARC: number = Math.PI * 0.7; // Arco de colisión ligeramente mayor
+    private readonly SHIELD_ARC: number = Math.PI * 0.4; // El arco del escudo cubre 72 grados
+    private readonly SHIELD_COLLISION_ARC: number = Math.PI * 0.5; // Arco de colisión ligeramente mayor (90 grados)
     private mouseX: number = 0;
     private mouseY: number = 0;
     private shieldAngle: number = Math.PI; // Ángulo inicial del escudo (180 grados)
