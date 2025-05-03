@@ -88,6 +88,13 @@ export class Game {
     private arrowCounter: number = 0;
     private readonly MAX_ARROWS: number = 10;
     private allArrowPositions: { x: number, y: number, isVertical: boolean }[] = [];
+    private readonly SHIELD_RADIUS: number = 60; // Aumentado el radio del escudo
+    private readonly SHIELD_COLLISION_RADIUS: number = 65; // Radio de colisión ligeramente mayor
+    private readonly SHIELD_ARC: number = Math.PI * 0.8; // El arco del escudo cubre 144 grados
+    private readonly SHIELD_COLLISION_ARC: number = Math.PI * 0.9; // Arco de colisión ligeramente mayor
+    private mouseX: number = 0;
+    private mouseY: number = 0;
+    private shieldAngle: number = Math.PI; // Ángulo inicial del escudo (180 grados)
 
     constructor(canvasId: string, scoreSystem: ScoreSystem) {
         this.scoreSystem = scoreSystem;
@@ -110,6 +117,8 @@ export class Game {
         this.initializeClouds();
         this.initializeGrassAndFlowers();
         this.initializeGame();
+
+        this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
     }
 
     public setTotalHurdles(count: number) {
@@ -628,6 +637,9 @@ export class Game {
         // Dibujar el perro
         this.dog.draw(this.ctx);
 
+        // Dibujar el escudo
+        this.drawShield();
+
         // Dibujar la valla
         this.hurdle.draw(this.ctx);
 
@@ -1084,7 +1096,7 @@ export class Game {
         this.arrowCounter++;
         
         const dogX = this.dog.getX();
-        const dogY = this.canvas.height - 100;
+        const dogY = this.dog.getY();
         const position = this.allArrowPositions[Math.floor(Math.random() * this.allArrowPositions.length)];
         
         let targetX: number, targetY: number;
@@ -1112,7 +1124,21 @@ export class Game {
         this.arrows = this.arrows.filter(arrow => {
             arrow.update();
             const pos = arrow.getPosition();
-            return !(pos.y > this.canvas.height || pos.x < 0 || pos.x > this.canvas.width || arrow.isExpired());
+            
+            // Verificar si la flecha sale de la pantalla o expira
+            if (pos.y > this.canvas.height || pos.x < 0 || pos.x > this.canvas.width || arrow.isExpired()) {
+                return false;
+            }
+            
+            // Verificar colisión con el escudo usando la posición actual del perro
+            const arrowBounds = arrow.getBounds();
+            if (this.checkShieldCollision(arrowBounds)) {
+                this.effects.createSuccessEffect(pos.x, pos.y);
+                this.soundEffects.playSound('shield_block');
+                return false;
+            }
+            
+            return true;
         });
 
         // Generar nueva flecha si es necesario
@@ -1128,5 +1154,117 @@ export class Game {
                 this.soundEffects.playSound('arrow_impact');
             }
         }
+    }
+
+    private handleMouseMove(e: MouseEvent): void {
+        const rect = this.canvas.getBoundingClientRect();
+        this.mouseX = e.clientX - rect.left;
+        this.mouseY = e.clientY - rect.top;
+        
+        // Calcular el ángulo del escudo basado en la posición del ratón relativa al perro
+        const dogX = this.dog.getX();
+        const dogY = this.dog.getY();
+        this.shieldAngle = Math.atan2(this.mouseY - dogY, this.mouseX - dogX);
+    }
+
+    private drawShield(): void {
+        const dogX = this.dog.getX();
+        const dogY = this.dog.getY();
+        
+        // Dibujar el área de colisión (semitransparente)
+        this.ctx.save();
+        this.ctx.beginPath();
+        this.ctx.arc(
+            dogX, 
+            dogY, 
+            this.SHIELD_COLLISION_RADIUS,
+            this.shieldAngle - this.SHIELD_COLLISION_ARC / 2,
+            this.shieldAngle + this.SHIELD_COLLISION_ARC / 2
+        );
+        this.ctx.fillStyle = 'rgba(100, 200, 255, 0.1)';
+        this.ctx.fill();
+        
+        // Dibujar el escudo principal
+        this.ctx.beginPath();
+        this.ctx.arc(
+            dogX, 
+            dogY, 
+            this.SHIELD_RADIUS,
+            this.shieldAngle - this.SHIELD_ARC / 2,
+            this.shieldAngle + this.SHIELD_ARC / 2
+        );
+        
+        // Gradiente para efecto de energía
+        const gradient = this.ctx.createRadialGradient(
+            dogX, dogY, this.SHIELD_RADIUS * 0.8,
+            dogX, dogY, this.SHIELD_RADIUS
+        );
+        gradient.addColorStop(0, 'rgba(0, 150, 255, 0.2)');
+        gradient.addColorStop(0.5, 'rgba(0, 150, 255, 0.4)');
+        gradient.addColorStop(1, 'rgba(0, 150, 255, 0.6)');
+        
+        this.ctx.fillStyle = gradient;
+        this.ctx.fill();
+        
+        // Borde brillante
+        this.ctx.strokeStyle = 'rgba(100, 200, 255, 0.8)';
+        this.ctx.lineWidth = 3;
+        this.ctx.stroke();
+        
+        // Efecto de brillo en los bordes
+        this.ctx.beginPath();
+        this.ctx.arc(
+            dogX, 
+            dogY, 
+            this.SHIELD_RADIUS,
+            this.shieldAngle - this.SHIELD_ARC / 2,
+            this.shieldAngle + this.SHIELD_ARC / 2
+        );
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+        this.ctx.lineWidth = 2;
+        this.ctx.stroke();
+        
+        this.ctx.restore();
+    }
+
+    private checkShieldCollision(arrowBounds: { x: number, y: number, width: number, height: number }): boolean {
+        const dogX = this.dog.getX();
+        const dogY = this.dog.getY();
+        
+        // Obtener los puntos de la flecha para mejor detección
+        const arrowPoints = [
+            { x: arrowBounds.x, y: arrowBounds.y },
+            { x: arrowBounds.x + arrowBounds.width, y: arrowBounds.y },
+            { x: arrowBounds.x + arrowBounds.width, y: arrowBounds.y + arrowBounds.height },
+            { x: arrowBounds.x, y: arrowBounds.y + arrowBounds.height },
+            { x: arrowBounds.x + arrowBounds.width/2, y: arrowBounds.y + arrowBounds.height/2 }
+        ];
+        
+        // Verificar cada punto de la flecha
+        for (const point of arrowPoints) {
+            // Calcular la distancia entre el punto y el centro del escudo
+            const distance = Math.sqrt(
+                Math.pow(point.x - dogX, 2) + 
+                Math.pow(point.y - dogY, 2)
+            );
+            
+            // Si el punto está dentro del radio de colisión del escudo
+            if (distance <= this.SHIELD_COLLISION_RADIUS) {
+                // Calcular el ángulo del punto respecto al perro
+                const pointAngle = Math.atan2(point.y - dogY, point.x - dogX);
+                
+                // Normalizar los ángulos
+                let angleDiff = pointAngle - this.shieldAngle;
+                while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                
+                // Si el punto está dentro del arco de colisión del escudo
+                if (Math.abs(angleDiff) <= this.SHIELD_COLLISION_ARC / 2) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
     }
 }

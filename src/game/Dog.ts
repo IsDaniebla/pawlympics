@@ -46,6 +46,10 @@ export class Dog {
         return this.x;
     }
 
+    public getY(): number {
+        return this.y + this.jumpHeight;
+    }
+
     public setX(x: number): void {
         this.x = x;
         this.baseX = x;

@@ -1,5 +1,13 @@
 export class SoundEffects {
-    private sounds: { [key: string]: HTMLAudioElement } = {};
+    private sounds: { [key: string]: HTMLAudioElement } = {
+        'perfect_jump': new Audio('audio/perfect_jump.mp3'),
+        'good_jump': new Audio('audio/good_jump.mp3'),
+        'fail_jump': new Audio('audio/fail_jump.mp3'),
+        'game_over': new Audio('audio/game_over.mp3'),
+        'arrow_impact': new Audio('audio/arrow_impact.mp3'),
+        'shield_block': new Audio('audio/shield_block.mp3')
+    };
+    
     private isMuted: boolean = false;
     private volume: number = 0.3;
 
