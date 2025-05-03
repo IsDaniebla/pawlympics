@@ -84,7 +84,7 @@ export class Game {
     private readonly ARROW_SPAWN_RATE: number = 100;
     private arrowSpawnCounter: number = 0;
     private readonly ARROW_SPEED: number = 7;
-    private readonly HORIZONTAL_ARROW_SPEED: number = 9; // Nueva velocidad para flechas horizontales
+    private readonly HORIZONTAL_ARROW_SPEED: number = 9;
     private arrowCounter: number = 0;
     private readonly MAX_ARROWS: number = 10;
     private allArrowPositions: { x: number, y: number, isVertical: boolean }[] = [];
@@ -855,85 +855,11 @@ export class Game {
 
         this.dog.update();
             
-        // Asegurarse de que la música esté sonando durante el juego
         if (!this.isMusicPlaying && this.isMusicLoaded) {
             this.startBackgroundMusic();
         }
 
-        // Actualizar flechas existentes
-        this.arrows = this.arrows.filter(arrow => {
-            arrow.update();
-            const pos = arrow.getPosition();
-            
-            // Eliminar flechas que salen de la pantalla o han expirado
-            if (pos.y > this.canvas.height || pos.x < 0 || pos.x > this.canvas.width || arrow.isExpired()) {
-                return false;
-            }
-            return true;
-        });
-
-        // Generar una nueva flecha solo si no excedemos el límite
-        if (this.arrows.length < this.MAX_ARROWS) {
-            this.arrowSpawnCounter++;
-            if (this.arrowSpawnCounter >= this.ARROW_SPAWN_RATE) {
-                this.arrowSpawnCounter = 0;
-                this.arrowCounter++;
-                
-                // Obtener la posición actual del perro
-                const dogX = this.dog.getX();
-                const dogY = this.canvas.height - 100;
-
-                // Seleccionar una posición aleatoria de todas las posibles
-                const randomIndex = Math.floor(Math.random() * this.allArrowPositions.length);
-                const position = this.allArrowPositions[randomIndex];
-                
-                let targetX, targetY;
-                
-                if (position.isVertical) {
-                    // Trayectoria parabólica aleatoria para flecha vertical
-                    targetX = position.x + (Math.random() - 0.5) * 300;
-                    targetY = dogY - Math.random() * 100;
-                } else {
-                    // Trayectoria directa para flechas horizontales
-                    const distanciaAlPerro = this.canvas.width - dogX;
-                    
-                    // Calcular punto de intersección para una trayectoria más precisa
-                    targetX = dogX; // Apuntar directamente al perro
-                    
-                    // Variar la altura del objetivo para crear diferentes trayectorias
-                    if (Math.random() < 0.7) {
-                        // 70% de probabilidad de apuntar al cuerpo
-                        targetY = dogY - 10 + Math.random() * 20;
-                    } else {
-                        // 30% de probabilidad de variar más la altura
-                        targetY = dogY - 40 + Math.random() * 80;
-                    }
-                }
-
-                // El ajuste adicional solo para flechas verticales
-                if (position.isVertical && Math.random() < 0.6) {
-                    targetX = dogX - 25 + Math.random() * 50;
-                }
-                
-                const newArrow = new Arrow(position.x, position.y, 
-                    position.isVertical ? this.ARROW_SPEED : this.HORIZONTAL_ARROW_SPEED,
-                    targetX, targetY, !position.isVertical); // Tiro directo para flechas horizontales
-                
-                this.arrows.push(newArrow);
-            }
-        }
-
-        // Verificar colisiones con el perro
-        const dogBounds = this.dog.getBounds();
-        for (const arrow of this.arrows) {
-            const arrowBounds = arrow.getBounds();
-            if (this.checkCollision(dogBounds, arrowBounds)) {
-                this.score = Math.max(0, this.score - 5); // Restar 5 puntos, mínimo 0
-                this.arrows = this.arrows.filter(a => a !== arrow); // Eliminar la flecha
-                this.effects.createFailEffect(this.dog.getX(), this.canvas.height - 90);
-                this.soundEffects.playSound('arrow_impact');
-            }
-        }
+        this.updateArrows();
 
         // Actualizar el terreno y la valla si el perro no está en recuperación
         if (!this.dog.isInRecovery()) {
@@ -1146,5 +1072,61 @@ export class Game {
         // Actualizar la tabla de puntuaciones
         const updateScoreTableEvent = new CustomEvent('updateScoreTable');
         document.dispatchEvent(updateScoreTableEvent);
+    }
+
+    private generateArrow(): void {
+        if (this.arrows.length >= this.MAX_ARROWS) return;
+
+        this.arrowSpawnCounter++;
+        if (this.arrowSpawnCounter < this.ARROW_SPAWN_RATE) return;
+
+        this.arrowSpawnCounter = 0;
+        this.arrowCounter++;
+        
+        const dogX = this.dog.getX();
+        const dogY = this.canvas.height - 100;
+        const position = this.allArrowPositions[Math.floor(Math.random() * this.allArrowPositions.length)];
+        
+        let targetX: number, targetY: number;
+        
+        if (position.isVertical) {
+            targetX = position.x + (Math.random() - 0.5) * 300;
+            targetY = dogY - Math.random() * 100;
+            
+            if (Math.random() < 0.6) {
+                targetX = dogX - 25 + Math.random() * 50;
+            }
+        } else {
+            targetX = dogX;
+            targetY = Math.random() < 0.7 ? 
+                dogY - 10 + Math.random() * 20 :  // Apuntar al cuerpo
+                dogY - 40 + Math.random() * 80;   // Variar altura
+        }
+        
+        const speed = position.isVertical ? this.ARROW_SPEED : this.HORIZONTAL_ARROW_SPEED;
+        this.arrows.push(new Arrow(position.x, position.y, speed, targetX, targetY, !position.isVertical));
+    }
+
+    private updateArrows(): void {
+        // Actualizar y filtrar flechas existentes
+        this.arrows = this.arrows.filter(arrow => {
+            arrow.update();
+            const pos = arrow.getPosition();
+            return !(pos.y > this.canvas.height || pos.x < 0 || pos.x > this.canvas.width || arrow.isExpired());
+        });
+
+        // Generar nueva flecha si es necesario
+        this.generateArrow();
+
+        // Verificar colisiones con el perro
+        const dogBounds = this.dog.getBounds();
+        for (const arrow of this.arrows) {
+            if (this.checkCollision(dogBounds, arrow.getBounds())) {
+                this.score = Math.max(0, this.score - 5);
+                this.arrows = this.arrows.filter(a => a !== arrow);
+                this.effects.createFailEffect(this.dog.getX(), this.canvas.height - 90);
+                this.soundEffects.playSound('arrow_impact');
+            }
+        }
     }
 }
