@@ -1,11 +1,11 @@
 export class SoundEffects {
     private sounds: { [key: string]: HTMLAudioElement } = {
-        'perfect_jump': new Audio('audio/perfect_jump.mp3'),
-        'good_jump': new Audio('audio/good_jump.mp3'),
-        'fail_jump': new Audio('audio/fail_jump.mp3'),
-        'game_over': new Audio('audio/game_over.mp3'),
-        'arrow_impact': new Audio('audio/arrow_impact.mp3'),
-        'shield_block': new Audio('audio/shield_block.mp3')
+        'perfect_jump': new Audio('./audio/perfect_jump.mp3'),
+        'good_jump': new Audio('./audio/good_jump.mp3'),
+        'fail_jump': new Audio('./audio/fail_jump.mp3'),
+        'game_over': new Audio('./audio/game_over.mp3'),
+        'arrow_impact': new Audio('./audio/arrow_impact.mp3'),
+        'shield_block': new Audio('./audio/shield_block.mp3')
     };
     
     private isMuted: boolean = false;
@@ -17,10 +17,10 @@ export class SoundEffects {
 
     private initializeSounds() {
         // Cargar los efectos de sonido
-        this.loadSound('perfect_jump', 'audio/perfect_jump.mp3');
-        this.loadSound('good_jump', 'audio/good_jump.mp3');
-        this.loadSound('fail_jump', 'audio/fail_jump.mp3');
-        this.loadSound('game_over', 'audio/game_over.mp3');
+        this.loadSound('perfect_jump', './audio/perfect_jump.mp3');
+        this.loadSound('good_jump', './audio/good_jump.mp3');
+        this.loadSound('fail_jump', './audio/fail_jump.mp3');
+        this.loadSound('game_over', './audio/game_over.mp3');
     }
 
     private loadSound(name: string, path: string) {

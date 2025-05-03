@@ -765,7 +765,7 @@ export class Game {
     private initializeBackgroundMusic() {
         try {
             this.backgroundMusic = new Audio();
-            this.backgroundMusic.src = 'audio/background-music.mp3';
+            this.backgroundMusic.src = './audio/background-music.mp3';
             this.backgroundMusic.loop = true;
             this.backgroundMusic.volume = parseInt(this.volumeSlider.value) / 100;
             this.previousVolume = this.backgroundMusic.volume;
