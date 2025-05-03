@@ -120,7 +120,7 @@
         color: rgba(255, 68, 68, 0.9);
       }
       .volume-slider {
-        height: 0;
+        height: 100px;
         width: 4px;
         background: rgba(255, 255, 255, 0.8);
         border-radius: 2px;
@@ -131,8 +131,9 @@
         transition: height 0.3s ease;
         opacity: 0;
         pointer-events: none;
-        writing-mode: bt-lr;
-        -webkit-appearance: slider-vertical;
+        writing-mode: vertical-lr;
+        direction: rtl;
+        -webkit-appearance: none;
       }
       .volume-slider::-webkit-slider-thumb {
         -webkit-appearance: none;
@@ -276,7 +277,7 @@
           <option value="9">9</option>
           <option value="10">10</option>
         </select>
-        <button onclick="restartGame()">Reiniciar Juego</button>
+        <button id="restartButton">Reiniciar Juego</button>
       </div>
       <div class="game-info">
         <div class="score-panel">
@@ -334,8 +335,8 @@
       </div>
     </div>
     <script type="module">
-      import { Game } from './src/game/Game.ts';
-      import { ScoreSystem } from './src/game/ScoreSystem.ts';
+      import { Game } from './src/game/Game';
+      import { ScoreSystem } from './src/game/ScoreSystem';
       
       let game;
       const scoreSystem = new ScoreSystem();
@@ -471,6 +472,9 @@
         updateScoreTable();
         initGame();
       });
+
+      // Configurar eventos
+      document.getElementById('restartButton').addEventListener('click', initGame);
     </script>
   </body>
 </html>

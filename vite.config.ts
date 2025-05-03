@@ -12,5 +12,13 @@ export default defineConfig({
         manualChunks: undefined
       }
     }
+  },
+  resolve: {
+    extensions: ['.ts', '.js']
+  },
+  server: {
+    headers: {
+      'Content-Type': 'application/javascript'
+    }
   }
 }) 
