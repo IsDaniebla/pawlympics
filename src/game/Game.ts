@@ -288,12 +288,16 @@ export class Game {
     }
 
     private nextHurdle() {
-        if (this.currentHurdle >= this.totalHurdles) {
+        if (!this.isInDemoMode && this.currentHurdle >= this.totalHurdles) {
             this.gameOver = true;
             return;
         }
         
-        this.currentHurdle++;
+        // Solo incrementar el contador si no estamos en modo demostración
+        if (!this.isInDemoMode) {
+            this.currentHurdle++;
+        }
+        
         this.dog.reset(this.dog.getX());
         this.isTransitioning = true;
         this.nextHurdleReady = true;
@@ -631,10 +635,10 @@ export class Game {
         const scoreElement = document.getElementById('score');
 
         if (currentHurdleElement) {
-            currentHurdleElement.textContent = `${this.currentHurdle}/${this.totalHurdles}`;
+            currentHurdleElement.textContent = this.isInDemoMode ? '-/-' : `${this.currentHurdle}/${this.totalHurdles}`;
         }
         if (successfulHurdlesElement) {
-            successfulHurdlesElement.textContent = this.successfulHurdles.toString();
+            successfulHurdlesElement.textContent = this.isInDemoMode ? '-' : this.successfulHurdles.toString();
         }
         if (scoreElement) {
             scoreElement.textContent = this.score.toString();
@@ -1092,9 +1096,13 @@ export class Game {
             if (this.dog.isInReturnState()) {
                 setTimeout(checkReturn, 100);
             } else {
-                if (this.currentHurdle >= this.totalHurdles) {
+                if (!this.isInDemoMode && this.currentHurdle >= this.totalHurdles) {
                     this.handleGameOver();
                 } else {
+                    // En modo demostración, no incrementar el contador de vallas exitosas
+                    if (!this.isInDemoMode) {
+                        this.successfulHurdles++;
+                    }
                     this.nextHurdle();
                 }
             }
