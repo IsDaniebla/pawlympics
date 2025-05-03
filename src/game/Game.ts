@@ -218,6 +218,7 @@ export class Game {
         this.generateColorSequence();
         this.dog = new Dog(this.DOG_X, this.canvas.height - 100);
         this.createNewHurdle();
+        this.initializeClouds(); // Reinicializar las nubes
         this.initializeGrassAndFlowers();
         this.effects = new Effects(); // Reiniciar los efectos
         this.effects.clearAllParticles(); // Limpiar todas las partículas existentes
