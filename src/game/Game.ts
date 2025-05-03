@@ -302,11 +302,13 @@ export class Game {
         this.isTrafficLightStopped = false;
         this.hasClickedThisHurdle = false;
 
+        // Reiniciar la velocidad al valor base
+        this.terrainSpeed = this.BASE_TERRAIN_SPEED;
+
         this.generateColorSequence();
         this.currentColorIndex = 0;
         this.lastColorChangeTime = performance.now();
         this.createNewHurdle();
-        this.terrainSpeed = this.BASE_TERRAIN_SPEED;
     }
 
     private drawClouds() {
@@ -477,6 +479,12 @@ export class Game {
                 if (this.isInDemoMode && this.currentColorIndex === this.trafficLightColors.length - 2) {
                     this.isTrafficLightStopped = true;
                     this.hasClickedThisHurdle = true;
+                    
+                    // Aumentar la velocidad en modo demo si se detuvo en un color válido
+                    const currentColor = this.trafficLightColors[this.currentColorIndex];
+                    if (currentColor === 'green' || currentColor === 'yellow' || currentColor === 'orange') {
+                        this.terrainSpeed = this.BASE_TERRAIN_SPEED * this.ACCELERATED_SPEED_MULTIPLIER;
+                    }
                 }
             }
         }
@@ -807,13 +815,15 @@ export class Game {
         if (this.gameOver) {
             this.initializeGame();
         } else if (!this.hasClickedThisHurdle) {
-            // Detener el semáforo en el color actual y acelerar todo el movimiento
+            // Detener el semáforo en el color actual
             this.isTrafficLightStopped = true;
             this.hasClickedThisHurdle = true;
 
-            // Aumentar la velocidad del terreno y la valla
-            this.terrainSpeed = this.BASE_TERRAIN_SPEED * this.ACCELERATED_SPEED_MULTIPLIER;
-
+            // Aumentar la velocidad si se detuvo en un color válido
+            const currentColor = this.trafficLightColors[this.currentColorIndex];
+            if (currentColor === 'green' || currentColor === 'yellow' || currentColor === 'orange') {
+                this.terrainSpeed = this.BASE_TERRAIN_SPEED * this.ACCELERATED_SPEED_MULTIPLIER;
+            }
         }
         // Prevenir comportamientos por defecto
         e.preventDefault();
