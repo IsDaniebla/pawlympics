@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Don't refactor code by removing things unless you're asked to. You just have to let them know.

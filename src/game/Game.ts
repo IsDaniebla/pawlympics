@@ -95,6 +95,7 @@ export class Game {
     private mouseX: number = 0;
     private mouseY: number = 0;
     private shieldAngle: number = Math.PI; // Ángulo inicial del escudo (180 grados)
+    private isInDemoMode: boolean = false;
 
     constructor(canvasId: string, scoreSystem: ScoreSystem) {
         this.scoreSystem = scoreSystem;
@@ -254,14 +255,36 @@ export class Game {
         // Crear array de colores intermedios
         const middleColors = ['yellow', 'orange', 'green'];
         
-        // Mezclar los colores intermedios
-        for (let i = middleColors.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [middleColors[i], middleColors[j]] = [middleColors[j], middleColors[i]];
+        // En modo demostración, el color seleccionado será el segundo
+        if (this.isInDemoMode) {
+            // Elegir un color aleatorio para el salto (será el segundo color)
+            const selectedColor = middleColors[Math.floor(Math.random() * middleColors.length)];
+            
+            // Agregar el color seleccionado como segundo color
+            this.trafficLightColors.push(selectedColor);
+            
+            // Generar 2 colores aleatorios adicionales
+            for (let i = 0; i < 2; i++) {
+                // Asegurarnos de que no se repitan colores consecutivos
+                let nextColor;
+                do {
+                    nextColor = middleColors[Math.floor(Math.random() * middleColors.length)];
+                } while (this.trafficLightColors[this.trafficLightColors.length - 1] === nextColor);
+                
+                this.trafficLightColors.push(nextColor);
+            }
+            
+            // Terminar con rojo
+            this.trafficLightColors.push('red');
+        } else {
+            // Comportamiento normal - mezclar los colores intermedios aleatoriamente
+            for (let i = middleColors.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [middleColors[i], middleColors[j]] = [middleColors[j], middleColors[i]];
+            }
+            // Agregar los colores mezclados y el rojo final
+            this.trafficLightColors = this.trafficLightColors.concat(middleColors, ['red']);
         }
-        
-        // Agregar los colores mezclados y el rojo final
-        this.trafficLightColors = this.trafficLightColors.concat(middleColors, ['red']);
     }
 
     private nextHurdle() {
@@ -449,6 +472,12 @@ export class Game {
             if (this.currentColorIndex < this.trafficLightColors.length - 1) {
                 this.currentColorIndex++;
                 this.lastColorChangeTime = currentTime;
+
+                // En modo demostración, detener en el color seleccionado (penúltima posición)
+                if (this.isInDemoMode && this.currentColorIndex === this.trafficLightColors.length - 2) {
+                    this.isTrafficLightStopped = true;
+                    this.hasClickedThisHurdle = true;
+                }
             }
         }
     }
@@ -854,6 +883,14 @@ export class Game {
             // Prevenir el comportamiento por defecto del espacio
             e.preventDefault();
         }
+        
+        // En modo demostración, permitir que el jugador salte con la tecla de flecha arriba
+        if (this.isInDemoMode && e.code === 'ArrowUp' && !this.isJumping && !this.dog.isInRecovery()) {
+            const distanceToHurdle = Math.abs(this.hurdle.getX() - this.DOG_X);
+            if (distanceToHurdle < this.JUMP_DETECTION_DISTANCE) {
+                this.evaluateJump();
+            }
+        }
     }
 
     private update() {
@@ -962,8 +999,17 @@ export class Game {
         let newX = currentX - moveSpeed;
 
         // Solo evaluar el salto si el perro no está retornando y no está en transición
-        if (!this.isJumping && !this.dog.isInRecovery() && !this.dog.isInReturnState() && !this.isTransitioning && Math.abs(newX - this.DOG_X) < this.JUMP_DETECTION_DISTANCE) {
-            this.evaluateJump();
+        if (!this.isJumping && !this.dog.isInRecovery() && !this.dog.isInReturnState() && !this.isTransitioning) {
+            const distanceToHurdle = Math.abs(newX - this.DOG_X);
+            
+            // En modo demostración, saltar cuando la valla esté cerca y el semáforo esté detenido
+            if (this.isInDemoMode && this.isTrafficLightStopped && distanceToHurdle < this.JUMP_DETECTION_DISTANCE) {
+                this.evaluateJump();
+            }
+            // En modo normal, evaluar saltos normalmente
+            else if (!this.isInDemoMode && distanceToHurdle < this.JUMP_DETECTION_DISTANCE) {
+                this.evaluateJump();
+            }
         }
 
         this.hurdle.setX(newX);
@@ -1071,6 +1117,18 @@ export class Game {
 
     public setPlayerName(name: string) {
         this.playerName = name || 'Invitado';
+    }
+
+    public setDemoMode(enabled: boolean) {
+        this.isInDemoMode = enabled;
+        if (enabled) {
+            // Reiniciar la secuencia de colores cuando se activa el modo demo
+            this.generateColorSequence();
+        }
+    }
+
+    public isDemoMode(): boolean {
+        return this.isInDemoMode;
     }
 
     private handleGameOver() {

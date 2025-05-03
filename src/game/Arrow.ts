@@ -40,7 +40,6 @@ export class Arrow {
             // Cálculo para tiro parabólico
             const dx = this.targetX - this.x;
             const dy = this.targetY - this.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
             this.angle = Math.atan2(dy, dx);
             
             // Ajustar velocidades para crear una parábola más plana
