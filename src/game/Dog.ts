@@ -407,4 +407,13 @@ export class Dog {
     public isInRecovery(): boolean {
         return this.isStumbling || this.isRecovering;
     }
+
+    public getBounds(): { x: number, y: number, width: number, height: number } {
+        return {
+            x: this.x - this.BODY_WIDTH * 1.5,
+            y: this.y + this.jumpHeight - this.BODY_HEIGHT * 1.5,
+            width: this.BODY_WIDTH * 3,
+            height: this.BODY_HEIGHT * 3
+        };
+    }
 } 

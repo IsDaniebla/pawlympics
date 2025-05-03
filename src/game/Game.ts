@@ -3,6 +3,7 @@ import { Hurdle } from "./Hurdle";
 import { Effects } from "./Effects";
 import { SoundEffects } from "./SoundEffects";
 import { ScoreSystem } from "./ScoreSystem";
+import { Arrow } from "./Arrow";
 
 export class Game {
     private canvas: HTMLCanvasElement;
@@ -70,6 +71,23 @@ export class Game {
     private volumeSlider: HTMLInputElement;
     private scoreSystem: ScoreSystem;
     private playerName: string = 'Invitado';
+    private arrows: Arrow[] = [];
+    private readonly VERTICAL_ARROW_POSITIONS: number[] = [
+        50, 150, 250, 350, 450,  // Lado izquierdo
+        550, 650, 750, 850,      // Centro
+        500, 600, 700, 800, 900  // Lado derecho
+    ];
+    private readonly HORIZONTAL_ARROW_POSITIONS: number[] = [
+        30, 60, 90, 120,         // Parte superior
+        150, 180, 210            // Parte media-superior
+    ];
+    private readonly ARROW_SPAWN_RATE: number = 100;
+    private arrowSpawnCounter: number = 0;
+    private readonly ARROW_SPEED: number = 7;
+    private readonly HORIZONTAL_ARROW_SPEED: number = 9; // Nueva velocidad para flechas horizontales
+    private arrowCounter: number = 0;
+    private readonly MAX_ARROWS: number = 10;
+    private allArrowPositions: { x: number, y: number, isVertical: boolean }[] = [];
 
     constructor(canvasId: string, scoreSystem: ScoreSystem) {
         this.scoreSystem = scoreSystem;
@@ -198,6 +216,23 @@ export class Game {
         // Agregar los event listeners
         document.addEventListener('keydown', this.boundKeydownHandler);
         this.canvas.addEventListener('click', this.boundClickHandler);
+
+        // Inicializar todas las posiciones posibles de flechas
+        this.allArrowPositions = [];
+        
+        // Añadir posiciones verticales
+        for (const x of this.VERTICAL_ARROW_POSITIONS) {
+            this.allArrowPositions.push({ x, y: 0, isVertical: true });
+        }
+        
+        // Añadir posiciones horizontales
+        for (const y of this.HORIZONTAL_ARROW_POSITIONS) {
+            this.allArrowPositions.push({ x: this.canvas.width, y, isVertical: false });
+        }
+
+        this.arrows = [];
+        this.arrowSpawnCounter = 0;
+        this.arrowCounter = 0;
 
         this.startGame();
     }
@@ -599,6 +634,11 @@ export class Game {
         // Actualizar la información del juego en los paneles HTML
         this.updateGameInfo();
 
+        // Dibujar flechas
+        for (const arrow of this.arrows) {
+            arrow.draw(this.ctx);
+        }
+
         if (this.gameOver) {
             // Si es el primer frame de gameOver, guardar el tiempo y reproducir sonido
             if (this.gameOverStartTime === 0) {
@@ -811,30 +851,105 @@ export class Game {
         // Actualizar efectos siempre, incluso en game over
         this.effects.update();
 
-        if (!this.gameOver) { 
-            this.dog.update();
+        if (this.gameOver) return;
+
+        this.dog.update();
             
-            // Asegurarse de que la música esté sonando durante el juego
-            if (!this.isMusicPlaying && this.isMusicLoaded) {
-                this.startBackgroundMusic();
-            }
-            
-            // Actualizar el terreno y la valla si el perro no está en recuperación
-            if (!this.dog.isInRecovery()) {
-                this.updateHurdlePosition(deltaTime);
-                if (this.dog.isInReturnState()) {
-                    this.terrainOffset += this.terrainSpeed * 1.2;
-                } else {
-                    this.terrainOffset += this.terrainSpeed;
-                }
-            }
-            
-            this.updateTrafficLight(currentTime);
-            this.updateTrafficLightPosition(currentTime);
+        // Asegurarse de que la música esté sonando durante el juego
+        if (!this.isMusicPlaying && this.isMusicLoaded) {
+            this.startBackgroundMusic();
         }
+
+        // Actualizar flechas existentes
+        this.arrows = this.arrows.filter(arrow => {
+            arrow.update();
+            const pos = arrow.getPosition();
+            
+            // Eliminar flechas que salen de la pantalla o han expirado
+            if (pos.y > this.canvas.height || pos.x < 0 || pos.x > this.canvas.width || arrow.isExpired()) {
+                return false;
+            }
+            return true;
+        });
+
+        // Generar una nueva flecha solo si no excedemos el límite
+        if (this.arrows.length < this.MAX_ARROWS) {
+            this.arrowSpawnCounter++;
+            if (this.arrowSpawnCounter >= this.ARROW_SPAWN_RATE) {
+                this.arrowSpawnCounter = 0;
+                this.arrowCounter++;
+                
+                // Obtener la posición actual del perro
+                const dogX = this.dog.getX();
+                const dogY = this.canvas.height - 100;
+
+                // Seleccionar una posición aleatoria de todas las posibles
+                const randomIndex = Math.floor(Math.random() * this.allArrowPositions.length);
+                const position = this.allArrowPositions[randomIndex];
+                
+                let targetX, targetY;
+                
+                if (position.isVertical) {
+                    // Trayectoria parabólica aleatoria para flecha vertical
+                    targetX = position.x + (Math.random() - 0.5) * 300;
+                    targetY = dogY - Math.random() * 100;
+                } else {
+                    // Trayectoria directa para flechas horizontales
+                    const distanciaAlPerro = this.canvas.width - dogX;
+                    
+                    // Calcular punto de intersección para una trayectoria más precisa
+                    targetX = dogX; // Apuntar directamente al perro
+                    
+                    // Variar la altura del objetivo para crear diferentes trayectorias
+                    if (Math.random() < 0.7) {
+                        // 70% de probabilidad de apuntar al cuerpo
+                        targetY = dogY - 10 + Math.random() * 20;
+                    } else {
+                        // 30% de probabilidad de variar más la altura
+                        targetY = dogY - 40 + Math.random() * 80;
+                    }
+                }
+
+                // El ajuste adicional solo para flechas verticales
+                if (position.isVertical && Math.random() < 0.6) {
+                    targetX = dogX - 25 + Math.random() * 50;
+                }
+                
+                const newArrow = new Arrow(position.x, position.y, 
+                    position.isVertical ? this.ARROW_SPEED : this.HORIZONTAL_ARROW_SPEED,
+                    targetX, targetY, !position.isVertical); // Tiro directo para flechas horizontales
+                
+                this.arrows.push(newArrow);
+            }
+        }
+
+        // Verificar colisiones con el perro
+        const dogBounds = this.dog.getBounds();
+        for (const arrow of this.arrows) {
+            const arrowBounds = arrow.getBounds();
+            if (this.checkCollision(dogBounds, arrowBounds)) {
+                this.score = Math.max(0, this.score - 5); // Restar 5 puntos, mínimo 0
+                this.arrows = this.arrows.filter(a => a !== arrow); // Eliminar la flecha
+                this.effects.createFailEffect(this.dog.getX(), this.canvas.height - 90);
+                this.soundEffects.playSound('arrow_impact');
+            }
+        }
+
+        // Actualizar el terreno y la valla si el perro no está en recuperación
+        if (!this.dog.isInRecovery()) {
+            this.updateHurdlePosition(deltaTime);
+            if (this.dog.isInReturnState()) {
+                this.terrainOffset += this.terrainSpeed * 1.2;
+            } else {
+                this.terrainOffset += this.terrainSpeed;
+            }
+        }
+        
+        this.updateTrafficLight(currentTime);
+        this.updateTrafficLightPosition(currentTime);
     }
 
-    private checkCollision() {
+    private checkCollisionWithHurdle() {
         const dogX = this.dog.getX();
         const hurdleX = this.hurdle.getX();
         
@@ -846,6 +961,14 @@ export class Game {
                 }, 1500);
             }
         }
+    }
+
+    private checkCollision(rect1: { x: number, y: number, width: number, height: number },
+                         rect2: { x: number, y: number, width: number, height: number }): boolean {
+        return rect1.x < rect2.x + rect2.width &&
+               rect1.x + rect1.width > rect2.x &&
+               rect1.y < rect2.y + rect2.height &&
+               rect1.y + rect1.height > rect2.y;
     }
 
     private startGame() {
