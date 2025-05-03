@@ -212,8 +212,10 @@ export class Game {
 
         // Reinicializar elementos del juego
         this.generateColorSequence();
+        // Crear un nuevo perro en la posición inicial
         this.dog = new Dog(this.DOG_X, this.canvas.height - 100);
-        this.createNewHurdle();
+        // Crear una nueva valla en la posición inicial
+        this.hurdle = new Hurdle(this.INITIAL_HURDLE_X, this.canvas.height - 90);
         this.initializeClouds(); // Reinicializar las nubes
         this.initializeGrassAndFlowers();
         this.effects = new Effects(); // Reiniciar los efectos
