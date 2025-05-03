@@ -486,6 +486,13 @@ export class Game {
                         this.terrainSpeed = this.BASE_TERRAIN_SPEED * this.ACCELERATED_SPEED_MULTIPLIER;
                     }
                 }
+                
+                // Si llegamos al último color (rojo) y no se ha seleccionado ningún color
+                if (!this.hasClickedThisHurdle && this.currentColorIndex === this.trafficLightColors.length - 1) {
+                    this.isTrafficLightStopped = true;
+                    this.hasClickedThisHurdle = true;
+                    this.terrainSpeed = this.BASE_TERRAIN_SPEED * this.ACCELERATED_SPEED_MULTIPLIER;
+                }
             }
         }
     }
