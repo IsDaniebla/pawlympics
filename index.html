@@ -68,30 +68,37 @@
         padding: 15px 20px;
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        min-width: 180px;
-        flex: 1;
-        display: none;
+        width: 100%;
+        order: 999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
       }
       .action-panel h3 {
-        margin: 0 0 10px 0;
+        margin: 0 0 15px 0;
         color: #333;
+        width: 100%;
+        text-align: center;
       }
       .play-button {
         background-color: #4CAF50;
         color: white;
         border: none;
-        padding: 12px 24px;
+        padding: 15px 30px;
         border-radius: 6px;
         cursor: pointer;
-        font-size: 16px;
+        font-size: 18px;
         text-transform: uppercase;
         letter-spacing: 1px;
         transition: all 0.3s ease;
-        width: 80%;
-        display: none;
+        width: 100%;
+        max-width: 300px;
+        display: flex;
         align-items: center;
         justify-content: center;
         gap: 8px;
+        margin: 0;
       }
       .play-button::after {
         content: '⛶';
@@ -103,21 +110,18 @@
       }
       @media (max-width: 850px) {
         .play-button {
-          display: flex;
-        }
-        .play-button::after {
-          display: inline;
-        }
-        .action-panel {
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
+          max-width: none;
+          padding: 20px 30px;
+          font-size: 20px;
         }
         .game-info {
           padding: 0;
+          flex-direction: column;
+          align-items: stretch;
         }
-        
+        .action-panel {
+          margin-top: 10px;
+        }
         .score-panel, .points-panel, .mini-scoreboard, .action-panel {
           min-width: unset;
           max-width: 100%;
