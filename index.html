@@ -208,6 +208,36 @@
         flex-direction: row;
         align-items: center;
         height: 32px;
+        z-index: 1001;
+      }
+      .volume-slider {
+        width: 0;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 2px;
+        position: absolute;
+        left: 40px;
+        top: 50%;
+        transform: translateY(-50%);
+        transition: all 0.3s ease;
+        opacity: 0;
+        pointer-events: none;
+        -webkit-appearance: none;
+        appearance: none;
+        z-index: 1001;
+      }
+      .volume-slider.active {
+        width: 100px;
+        opacity: 1;
+        pointer-events: all;
+      }
+      /* Mantener visible en hover para desktop */
+      @media (hover: hover) {
+        .volume-control:hover .volume-slider {
+          width: 100px;
+          opacity: 1;
+          pointer-events: all;
+        }
       }
       .volume-icon {
         background: none;
@@ -219,7 +249,7 @@
         width: 32px;
         height: 32px;
         position: relative;
-        z-index: 2;
+        z-index: 1002;
         font-size: 28px;
         color: rgba(255, 255, 255, 0.9);
         text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
@@ -230,45 +260,6 @@
       }
       .volume-icon.muted {
         color: rgba(255, 68, 68, 0.9);
-      }
-      .volume-slider {
-        width: 0;
-        height: 4px;
-        background: rgba(255, 255, 255, 0.8);
-        border-radius: 2px;
-        position: absolute;
-        left: 40px;
-        top: 50%;
-        transform: translateY(-50%);
-        transition: width 0.3s ease;
-        opacity: 0;
-        pointer-events: none;
-        -webkit-appearance: none;
-        appearance: none;
-      }
-      .volume-slider::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        width: 12px;
-        height: 12px;
-        background: white;
-        border-radius: 50%;
-        cursor: pointer;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-      }
-      .volume-slider::-moz-range-thumb {
-        width: 12px;
-        height: 12px;
-        background: white;
-        border-radius: 50%;
-        cursor: pointer;
-        border: none;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-      }
-      .volume-control:hover .volume-slider {
-        width: 100px;
-        opacity: 1;
-        pointer-events: all;
-        z-index: 3;
       }
       .volume-lines {
         position: absolute;
@@ -1589,35 +1580,224 @@
       const exitFullscreenButton = document.getElementById('exitFullscreenButton');
       exitFullscreenButton?.addEventListener('click', exitFullscreen);
 
-      function initializeAudioControls() {
-        // Configurar el control de volumen
-        this.volumeSlider.addEventListener('input', () => {
-          const volume = parseInt(this.volumeSlider.value) / 100;
-          this.setVolume(volume);
-          this.updateVolumeLines(volume);
-        });
+      // Configuración del control de volumen
+      let volumeHideTimeout;
+      const volumeControl = document.querySelector('.volume-control');
+      const volumeSlider = document.querySelector('.volume-slider');
+      const volumeIcon = document.querySelector('.volume-icon');
+      let isVolumeActive = false;
+      let isInteractingWithSlider = false;
+      let isMuted = false;
 
-        // Configurar el botón de muteo
-        this.muteButton.addEventListener('click', () => {
-          this.toggleMute();
-        });
+      function toggleMute(e) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
 
-        // Inicializar las líneas de volumen con el volumen inicial de 10%
-        this.updateVolumeLines(0.1);
-      }
-
-      function initializeBackgroundMusic() {
-        try {
-          this.backgroundMusic = new Audio();
-          this.backgroundMusic.src = 'audio/background-music.mp3';
-          this.backgroundMusic.loop = true;
-          this.backgroundMusic.volume = 0.1; // Volumen inicial al 10%
-          this.previousVolume = this.backgroundMusic.volume;
-          this.backgroundMusic.autoplay = true;
-        } catch (error) {
-          console.warn('No se pudo inicializar la música de fondo:', error);
+        isMuted = !isMuted;
+        volumeIcon.textContent = isMuted ? '🔇' : '🔊';
+        volumeIcon.classList.toggle('muted', isMuted);
+        
+        if (game) {
+          if (isMuted) {
+            game.setVolume(0);
+          } else {
+            const volume = parseInt(volumeSlider.value) / 100;
+            game.setVolume(volume);
+          }
         }
       }
+
+      // Eventos para el icono de volumen
+      volumeIcon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleMute(e);
+      });
+
+      volumeIcon.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const touch = e.touches[0];
+        const iconRect = volumeIcon.getBoundingClientRect();
+        const isInIcon = touch.clientX >= iconRect.left &&
+                        touch.clientX <= iconRect.right &&
+                        touch.clientY >= iconRect.top &&
+                        touch.clientY <= iconRect.bottom;
+        
+        if (isInIcon) {
+          toggleMute(e);
+        } else {
+          showVolumeSlider(e);
+        }
+      }, { passive: false });
+
+      // Prevenir que el touchend propague y cause comportamientos no deseados
+      volumeIcon.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }, { passive: false });
+
+      // Eventos para el slider
+      volumeSlider.addEventListener('mousedown', () => {
+        isInteractingWithSlider = true;
+        clearTimeout(volumeHideTimeout);
+      });
+
+      volumeSlider.addEventListener('touchstart', () => {
+        isInteractingWithSlider = true;
+        clearTimeout(volumeHideTimeout);
+      }, { passive: false });
+
+      volumeSlider.addEventListener('input', (e) => {
+        e.stopPropagation();
+        clearTimeout(volumeHideTimeout);
+        volumeSlider.classList.add('active');
+        isVolumeActive = true;
+
+        // Actualizar el volumen si no está muteado
+        if (!isMuted && game) {
+          const volume = parseInt(volumeSlider.value) / 100;
+          game.setVolume(volume);
+        }
+      });
+
+      // Eventos para detectar cuando se deja de interactuar con el slider
+      document.addEventListener('mouseup', () => {
+        if (isInteractingWithSlider) {
+          isInteractingWithSlider = false;
+          volumeHideTimeout = setTimeout(hideVolumeSlider, 2000);
+        }
+      });
+
+      document.addEventListener('touchend', () => {
+        if (isInteractingWithSlider) {
+          isInteractingWithSlider = false;
+          volumeHideTimeout = setTimeout(hideVolumeSlider, 2000);
+        }
+      });
+
+      function showVolumeSlider(e) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        
+        clearTimeout(volumeHideTimeout);
+        volumeSlider.classList.add('active');
+        isVolumeActive = true;
+        
+        // Solo configurar el timeout si no se está interactuando con el slider
+        if (!isInteractingWithSlider) {
+          volumeHideTimeout = setTimeout(hideVolumeSlider, 5000); // Aumentado a 5 segundos
+        }
+      }
+
+      function hideVolumeSlider(e) {
+        if (e) {
+          e.preventDefault();
+        }
+        
+        // No ocultar si se está interactuando con el slider
+        if (isInteractingWithSlider) {
+          return;
+        }
+
+        // En desktop, no ocultar si el mouse está sobre el control
+        if (window.matchMedia('(hover: hover)').matches && volumeControl.matches(':hover')) {
+          return;
+        }
+        
+        clearTimeout(volumeHideTimeout);
+        volumeSlider.classList.remove('active');
+        isVolumeActive = false;
+      }
+
+      function handleVolumeTouch(e) {
+        const touch = e.touches[0];
+        const volumeRect = volumeControl.getBoundingClientRect();
+        const isInVolumeControl = touch.clientX >= volumeRect.left &&
+                                touch.clientX <= volumeRect.right &&
+                                touch.clientY >= volumeRect.top &&
+                                touch.clientY <= volumeRect.bottom;
+
+        if (isInVolumeControl) {
+          e.stopPropagation();
+          showVolumeSlider(e);
+        } else if (isVolumeActive && !isInteractingWithSlider) {
+          hideVolumeSlider(e);
+        }
+      }
+
+      // Eventos para el control de volumen en desktop
+      volumeControl.addEventListener('mouseenter', () => {
+        if (window.matchMedia('(hover: hover)').matches) {
+          showVolumeSlider();
+        }
+      });
+
+      volumeControl.addEventListener('mouseleave', () => {
+        if (window.matchMedia('(hover: hover)').matches && !isInteractingWithSlider) {
+          volumeHideTimeout = setTimeout(hideVolumeSlider, 1000);
+        }
+      });
+
+      // Eventos globales para cerrar el control de volumen
+      document.addEventListener('click', (e) => {
+        const volumeRect = volumeControl.getBoundingClientRect();
+        const isInVolumeControl = e.clientX >= volumeRect.left &&
+                                e.clientX <= volumeRect.right &&
+                                e.clientY >= volumeRect.top &&
+                                e.clientY <= volumeRect.bottom;
+
+        if (!isInVolumeControl && isVolumeActive && !isInteractingWithSlider) {
+          hideVolumeSlider(e);
+        }
+      });
+
+      document.addEventListener('touchstart', handleVolumeTouch, { passive: false });
+
+      // Manejar el control de volumen en el canvas
+      if (gameCanvas) {
+        gameCanvas.addEventListener('touchstart', handleVolumeTouch, { passive: false });
+        gameCanvas.addEventListener('click', (e) => {
+          const volumeRect = volumeControl.getBoundingClientRect();
+          const isInVolumeControl = e.clientX >= volumeRect.left &&
+                                  e.clientX <= volumeRect.right &&
+                                  e.clientY >= volumeRect.top &&
+                                  e.clientY <= volumeRect.bottom;
+
+          if (!isInVolumeControl && isVolumeActive && !isInteractingWithSlider) {
+            hideVolumeSlider(e);
+          }
+        });
+      }
+
+      // Actualizar la posición del control de volumen en fullscreen
+      function updateVolumeControlPosition() {
+        const gameContainer = document.querySelector('.game-container');
+        const isFullscreen = gameContainer?.classList.contains('fullscreen-mode');
+        
+        if (isFullscreen) {
+          volumeControl.style.position = 'fixed';
+          volumeControl.style.left = '20px';
+          volumeControl.style.bottom = '20px';
+          volumeControl.style.top = 'auto';
+        } else {
+          volumeControl.style.position = '';
+          volumeControl.style.left = '';
+          volumeControl.style.bottom = '';
+          volumeControl.style.top = '';
+        }
+      }
+
+      // Actualizar posición cuando cambia el modo fullscreen
+      document.addEventListener('fullscreenchange', updateVolumeControlPosition);
+      document.addEventListener('webkitfullscreenchange', updateVolumeControlPosition);
+      document.addEventListener('MSFullscreenChange', updateVolumeControlPosition);
+
+      // Llamar inicialmente para establecer la posición correcta
+      updateVolumeControlPosition();
     </script>
   </body>
 </html>
