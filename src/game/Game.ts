@@ -1084,22 +1084,33 @@ export class Game {
         return this.isInDemoMode;
     }
 
-    private handleGameOver() {
+    private async handleGameOver() {
         this.gameOver = true;
         this.effects.setGameOver(true);
         this.gameOverStartTime = performance.now();
         this.soundEffects.playSound('game_over');
 
-        // Guardar la puntuación
-        this.scoreSystem.addScore(this.playerName, this.score, this.totalHurdles);
+        try {
+            // Guardar la puntuación
+            await this.scoreSystem.addScore(this.playerName, this.score, this.totalHurdles);
 
-        // Actualizar la tabla de puntuaciones
-        const updateScoreTableEvent = new CustomEvent('updateScoreTable');
-        document.dispatchEvent(updateScoreTableEvent);
+            // Actualizar la tabla de puntuaciones
+            const updateScoreTableEvent = new CustomEvent('updateScoreTable');
+            document.dispatchEvent(updateScoreTableEvent);
 
-        // Disparar el evento de game over
-        const gameOverEvent = new CustomEvent('gameOver');
-        document.dispatchEvent(gameOverEvent);
+            // Disparar el evento de game over
+            const gameOverEvent = new CustomEvent('gameOver');
+            document.dispatchEvent(gameOverEvent);
+        } catch (error) {
+            console.error('Error al guardar la puntuación:', error);
+            // Intentar guardar localmente si falla la sincronización
+            localStorage.setItem('pending_scores', JSON.stringify({
+                playerName: this.playerName,
+                score: this.score,
+                hurdleCount: this.totalHurdles,
+                date: new Date().toISOString()
+            }));
+        }
     }
 
     private generateArrow(): void {
