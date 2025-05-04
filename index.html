@@ -6,9 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pawlympics - Concurso de Salto Canino</title>
     <style>
+      * {
+        box-sizing: border-box;
+      }
       body {
         font-family: Arial, sans-serif;
         background-color: #f0f0f0;
+        margin: 0;
       }
       canvas {
         border: 2px solid black;
@@ -111,7 +115,7 @@
           align-items: center;
         }
         .game-info {
-          padding: 0 10px;
+          padding: 0;
         }
         
         .score-panel, .points-panel, .mini-scoreboard, .action-panel {
@@ -121,7 +125,19 @@
         }
 
         .game-controls {
-          padding: 15px 10px;
+          padding: 15px;
+          gap: 15px;
+        }
+        .player-select-container {
+          width: 100%;
+          margin: 0;
+        }
+        .hurdles-select-container {
+          width: 100%;
+          margin: 0;
+        }
+        #hurdlesCount {
+          width: 100%;
         }
       }
       @media (min-width: 851px) {
@@ -270,6 +286,7 @@
         flex-direction: column;
         align-items: center;
         text-align: center;
+        margin: 0;
       }
       .player-select {
         width: 100%;
@@ -277,6 +294,7 @@
         border: 1px solid #ddd;
         border-radius: 4px;
         text-align: center;
+        margin: 0;
       }
       .player-list {
         position: absolute;
@@ -337,6 +355,7 @@
         flex-direction: column;
         align-items: center;
         gap: 5px;
+        margin: 0;
       }
       #hurdlesCount {
         width: 70px;
@@ -344,6 +363,7 @@
         border: 1px solid #ddd;
         border-radius: 4px;
         text-align: center;
+        margin: 0;
       }
 
       /* Estilos para el modal de instrucciones */
@@ -650,33 +670,6 @@
         display: flex;
         justify-content: center;
         align-items: center;
-      }
-
-      @media (max-width: 850px) {
-        .game-info, .game-controls {
-          width: 100%;
-          flex-direction: column;
-          align-items: stretch;
-          padding: 15px 20px;
-        }
-        .score-panel, .points-panel, .mini-scoreboard, .action-panel {
-          width: 100%;
-          min-width: unset;
-        }
-        .game-controls {
-          align-items: flex-start;
-          gap: 15px;
-        }
-        .player-select-container {
-          margin-right: 0;
-          width: 100%;
-        }
-        .hurdles-select-container {
-          width: 100%;
-        }
-        .canvas-container {
-          display: none;
-        }
       }
 
       .player-select-container label,
