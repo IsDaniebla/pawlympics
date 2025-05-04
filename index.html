@@ -327,7 +327,7 @@
         padding: 15px;
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        min-width: 200px;
+        min-width: 250px;
       }
       .mini-scoreboard h3 {
         margin: 0 0 10px 0;
@@ -351,6 +351,19 @@
       }
       .mini-score-table tr:last-child td {
         border-bottom: none;
+      }
+      .mini-score-table td:nth-child(2) {
+        text-align: left;
+        max-width: 150px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .mini-score-table td:nth-child(2):hover {
+        white-space: normal;
+        overflow: visible;
+        position: relative;
+        z-index: 1;
       }
 
       /* Ajustar el estilo del select de vallas */
@@ -788,7 +801,7 @@
                 <div class="volume-line"></div>
               </div>
             </div>
-            <input type="range" id="volumeSlider" class="volume-slider" min="0" max="100" value="30" title="Control de volumen">
+            <input type="range" id="volumeSlider" class="volume-slider" min="0" max="100" value="10" title="Control de volumen">
           </div>
         </div>
         <div id="joystick-container" class="joystick-container">
@@ -1007,7 +1020,7 @@
         miniTbody.innerHTML = scores.slice(0, 4).map((score, index) => `
           <tr>
             <td>${index + 1}</td>
-            <td>${score.playerName.length > 8 ? score.playerName.substring(0, 8) + '...' : score.playerName}</td>
+            <td title="${score.playerName}">${score.playerName}</td>
             <td>${score.score}</td>
           </tr>
         `).join('');
@@ -1365,6 +1378,36 @@
       // Event listeners para el botón de salir de pantalla completa
       const exitFullscreenButton = document.getElementById('exitFullscreenButton');
       exitFullscreenButton?.addEventListener('click', exitFullscreen);
+
+      function initializeAudioControls() {
+        // Configurar el control de volumen
+        this.volumeSlider.addEventListener('input', () => {
+          const volume = parseInt(this.volumeSlider.value) / 100;
+          this.setVolume(volume);
+          this.updateVolumeLines(volume);
+        });
+
+        // Configurar el botón de muteo
+        this.muteButton.addEventListener('click', () => {
+          this.toggleMute();
+        });
+
+        // Inicializar las líneas de volumen con el volumen inicial de 10%
+        this.updateVolumeLines(0.1);
+      }
+
+      function initializeBackgroundMusic() {
+        try {
+          this.backgroundMusic = new Audio();
+          this.backgroundMusic.src = 'audio/background-music.mp3';
+          this.backgroundMusic.loop = true;
+          this.backgroundMusic.volume = 0.1; // Volumen inicial al 10%
+          this.previousVolume = this.backgroundMusic.volume;
+          this.backgroundMusic.autoplay = true;
+        } catch (error) {
+          console.warn('No se pudo inicializar la música de fondo:', error);
+        }
+      }
     </script>
   </body>
 </html>
