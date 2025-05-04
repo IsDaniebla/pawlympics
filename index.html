@@ -428,6 +428,47 @@
         background: rgba(255, 255, 255, 0.6);
         border-radius: 50%;
       }
+
+      .footer {
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 20px;
+        text-align: center;
+        margin-top: 30px;
+        border-radius: 10px;
+        font-family: Arial, sans-serif;
+      }
+
+      .footer a {
+        color: #3498db;
+        text-decoration: none;
+        transition: color 0.3s ease;
+      }
+
+      .footer a:hover {
+        color: #2980b9;
+      }
+
+      .tech-stack {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin: 10px 0;
+        flex-wrap: wrap;
+      }
+
+      .tech-item {
+        background: rgba(52, 152, 219, 0.2);
+        padding: 5px 15px;
+        border-radius: 15px;
+        border: 1px solid rgba(52, 152, 219, 0.5);
+      }
+
+      .thanks-message {
+        font-style: italic;
+        margin-top: 10px;
+        color: #bdc3c7;
+      }
     </style>
   </head>
   <body>
@@ -535,6 +576,25 @@
         </div>
       </div>
     </div>
+
+    <footer class="footer">
+      <div>
+        Creado por <a href="https://github.com/IsDaniebla" target="_blank">Daniebla</a>
+      </div>
+      <div class="tech-stack">
+        <span class="tech-item">TypeScript</span>
+        <span class="tech-item">HTML5 Canvas</span>
+        <span class="tech-item">CSS3</span>
+        <span class="tech-item">Vite</span>
+        <span class="tech-item">Claude AI</span>
+      </div>
+      <div>
+        <a href="https://github.com/IsDaniebla/pawlympics" target="_blank">Ver código en GitHub</a>
+      </div>
+      <div class="thanks-message">
+        ¡Gracias por jugar a Pawlympics! 🐕
+      </div>
+    </footer>
 
     <script type="module">
       import { Game } from './src/game/Game.ts';
