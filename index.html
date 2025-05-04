@@ -1207,6 +1207,11 @@
           if (game) {
             game.setDemoMode(false);
             updateJoystickVisibility(true);
+            
+            // Obtener el número actual de vallas
+            const hurdlesCount = parseInt(document.getElementById('hurdlesCount').value) || 5;
+            game.setTotalHurdles(hurdlesCount);
+            
             initGame(); // Reiniciar el juego al desactivar el modo demo
           }
         });
