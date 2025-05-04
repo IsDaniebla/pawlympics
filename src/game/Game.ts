@@ -249,13 +249,13 @@ export class Game {
         // Comenzar con rojo
         this.trafficLightColors = ['red'];
 
-        // Crear array de colores intermedios
-        const middleColors = ['yellow', 'orange', 'green'];
+        // Crear array de colores intermedios incluyendo rojo
+        const middleColors = ['yellow', 'orange', 'green', 'red'];
 
         // En modo demostración, el color seleccionado será el segundo
         if (this.isInDemoMode) {
             // Elegir un color aleatorio para el salto (será el segundo color)
-            const selectedColor = middleColors[Math.floor(Math.random() * middleColors.length)];
+            const selectedColor = middleColors.filter(color => color !== 'red')[Math.floor(Math.random() * 3)];
 
             // Agregar el color seleccionado como segundo color
             this.trafficLightColors.push(selectedColor);
