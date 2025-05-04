@@ -1242,6 +1242,15 @@
         const canvasContainer = document.querySelector('.canvas-container');
 
         if (gameContainer && canvas) {
+          // Intentar activar el modo pantalla completa nativo
+          if (gameContainer.requestFullscreen) {
+            gameContainer.requestFullscreen();
+          } else if (gameContainer.webkitRequestFullscreen) { // iOS Safari
+            gameContainer.webkitRequestFullscreen();
+          } else if (gameContainer.msRequestFullscreen) { // IE/Edge
+            gameContainer.msRequestFullscreen();
+          }
+
           gameContainer.classList.add('fullscreen-mode');
           document.body.style.overflow = 'hidden';
 
@@ -1310,6 +1319,15 @@
       }
 
       function exitFullscreen() {
+        // Salir del modo pantalla completa nativo
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) { // iOS Safari
+          document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) { // IE/Edge
+          document.msExitFullscreen();
+        }
+
         const gameContainer = document.querySelector('.game-container');
         const canvas = document.getElementById('gameCanvas');
         const audioControls = document.querySelector('.audio-controls');
@@ -1398,6 +1416,21 @@
           enterFullscreen();
         }
       });
+
+      // Event listener para cambios en el estado de pantalla completa
+      document.addEventListener('fullscreenchange', handleFullscreenChange);
+      document.addEventListener('webkitfullscreenchange', handleFullscreenChange); // iOS Safari
+      document.addEventListener('MSFullscreenChange', handleFullscreenChange); // IE/Edge
+
+      function handleFullscreenChange() {
+        const gameContainer = document.querySelector('.game-container');
+        if (!document.fullscreenElement && 
+            !document.webkitFullscreenElement && 
+            !document.msFullscreenElement) {
+          // Si salimos del modo pantalla completa usando Esc o métodos nativos del navegador
+          exitFullscreen();
+        }
+      }
 
       // Configuración del joystick
       let isDragging = false;
