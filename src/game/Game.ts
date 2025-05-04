@@ -1003,7 +1003,6 @@ export class Game {
                 this.effects.createSuccessEffect(this.dog.getX(), this.canvas.height - 120);
                 this.soundEffects.playSound('good_jump');
             }
-            this.successfulHurdles++;
             this.handleJumpResult(true);
         } else {
             this.dog.failJump(hurdleX + this.JUMP_LANDING_OFFSET);
@@ -1041,13 +1040,14 @@ export class Game {
             if (this.dog.isInReturnState()) {
                 setTimeout(checkReturn, 100);
             } else {
+                // En modo demostración, no incrementar el contador de vallas exitosas
+                if (!this.isInDemoMode) {
+                    this.successfulHurdles++;
+                }
+                
                 if (!this.isInDemoMode && this.currentHurdle >= this.totalHurdles) {
                     this.handleGameOver();
                 } else {
-                    // En modo demostración, no incrementar el contador de vallas exitosas
-                    if (!this.isInDemoMode) {
-                        this.successfulHurdles++;
-                    }
                     this.nextHurdle();
                 }
             }
