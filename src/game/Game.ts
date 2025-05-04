@@ -198,13 +198,53 @@ export class Game {
     }
 
     private cleanup() {
-        document.removeEventListener('keydown', this.boundKeydownHandler);
-        this.canvas.removeEventListener('touchstart', this.handleTouchStart);
-        this.canvas.removeEventListener('touchend', this.handleTouchEnd);
-        this.canvas.removeEventListener('click', this.boundClickHandler);
+        // Cancelar el game loop actual
         if (this.gameLoopId !== null) {
             cancelAnimationFrame(this.gameLoopId);
             this.gameLoopId = null;
+        }
+
+        // Remover event listeners antiguos
+        document.removeEventListener('keydown', this.boundKeydownHandler);
+        this.canvas.removeEventListener('touchstart', this.handleTouchStart.bind(this));
+        this.canvas.removeEventListener('touchend', this.handleTouchEnd.bind(this));
+        this.canvas.removeEventListener('click', this.boundClickHandler);
+        
+        // Limpiar arrays y objetos
+        this.arrows = [];
+        this.allArrowPositions = [];
+        this.effects.clearAllParticles();
+        
+        // Reiniciar variables de estado
+        this.isTransitioning = false;
+        this.nextHurdleReady = false;
+        this.gameOver = false;
+        this.isJumping = false;
+        this.hasClickedThisHurdle = false;
+        
+        // Reiniciar el contexto del canvas
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+
+    private initializeArrowPositions() {
+        this.allArrowPositions = [];
+        
+        // Posiciones verticales (flechas que caen)
+        for (const x of this.VERTICAL_ARROW_POSITIONS) {
+            this.allArrowPositions.push({
+                x: x,
+                y: 0,
+                isVertical: true
+            });
+        }
+        
+        // Posiciones horizontales (flechas que vienen de los lados)
+        for (const y of this.HORIZONTAL_ARROW_POSITIONS) {
+            this.allArrowPositions.push({
+                x: this.canvas.width,
+                y: y,
+                isVertical: false
+            });
         }
     }
 
@@ -219,6 +259,9 @@ export class Game {
         this.effects.setGameOver(false);
         this.gameOverStartTime = 0;
         this.isJumping = false;
+
+        // Inicializar las posiciones de las flechas
+        this.initializeArrowPositions();
 
         // Mostrar el joystick al iniciar o reiniciar el juego
         const showJoystickEvent = new CustomEvent('showJoystick');
@@ -236,38 +279,19 @@ export class Game {
 
         // Reinicializar elementos del juego
         this.generateColorSequence();
-        // Crear un nuevo perro en la posición inicial
         this.dog = new Dog(this.DOG_X, this.canvas.height - 100);
-        // Crear una nueva valla en la posición inicial
         this.hurdle = new Hurdle(this.INITIAL_HURDLE_X, this.canvas.height - 90);
-        this.initializeClouds(); // Reinicializar las nubes
+        this.initializeClouds();
         this.initializeGrassAndFlowers();
-        this.effects = new Effects(); // Reiniciar los efectos
-        this.effects.clearAllParticles(); // Limpiar todas las partículas existentes
+        this.effects = new Effects();
 
-        // Agregar los event listeners
+        // Agregar los nuevos event listeners
         document.addEventListener('keydown', this.boundKeydownHandler);
         this.canvas.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: false });
         this.canvas.addEventListener('touchend', this.handleTouchEnd.bind(this), { passive: false });
         this.canvas.addEventListener('click', this.boundClickHandler);
 
-        // Inicializar todas las posiciones posibles de flechas
-        this.allArrowPositions = [];
-
-        // Añadir posiciones verticales
-        for (const x of this.VERTICAL_ARROW_POSITIONS) {
-            this.allArrowPositions.push({ x, y: 0, isVertical: true });
-        }
-
-        // Añadir posiciones horizontales
-        for (const y of this.HORIZONTAL_ARROW_POSITIONS) {
-            this.allArrowPositions.push({ x: this.canvas.width, y, isVertical: false });
-        }
-
-        this.arrows = [];
-        this.arrowSpawnCounter = 0;
-        this.arrowCounter = 0;
-
+        // Iniciar el nuevo game loop
         this.startGame();
     }
 
