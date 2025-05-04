@@ -810,14 +810,58 @@
         }
       }
 
+      let isMobileDevice = false;
+
+      function checkIfMobile() {
+        // Detectar si es móvil por el user agent
+        const mobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        // Detectar si es móvil por el tamaño de la pantalla
+        const mobileSize = window.innerWidth <= 850;
+        
+        // Considerar móvil si cumple alguna de las dos condiciones
+        isMobileDevice = mobileUA || mobileSize;
+
+        // Actualizar visibilidad de elementos
+        const actionPanel = document.querySelector('.action-panel');
+        const playButton = document.querySelector('.play-button');
+        const joystickContainer = document.getElementById('joystick-container');
+        const canvasContainer = document.querySelector('.canvas-container');
+
+        if (actionPanel) {
+          actionPanel.style.display = isMobileDevice ? 'flex' : 'none';
+        }
+        if (playButton) {
+          playButton.style.display = isMobileDevice ? 'flex' : 'none';
+        }
+        if (joystickContainer && game) {
+          // Solo mostrar joystick si es móvil y no está en modo demo
+          if (isMobileDevice && !game.isDemoMode()) {
+            joystickContainer.classList.remove('hidden');
+          } else {
+            joystickContainer.classList.add('hidden');
+          }
+        }
+        if (canvasContainer) {
+          // En móvil, el canvas solo se muestra en fullscreen
+          if (isMobileDevice) {
+            const gameContainer = document.querySelector('.game-container');
+            const isFullscreen = gameContainer?.classList.contains('fullscreen-mode');
+            canvasContainer.style.display = isFullscreen ? 'flex' : 'none';
+          } else {
+            canvasContainer.style.display = 'flex';
+          }
+        }
+      }
+
       function updateJoystickVisibility(shouldShow) {
         const joystickContainer = document.getElementById('joystick-container');
         if (joystickContainer) {
           // Solo mostrar el joystick si:
           // 1. No estamos en modo demo
           // 2. Se debe mostrar (shouldShow es true)
-          // 3. Estamos en versión móvil (ancho <= 850px)
-          if (game && !game.isDemoMode() && shouldShow && window.innerWidth <= 850) {
+          // 3. Es un dispositivo móvil
+          if (game && !game.isDemoMode() && shouldShow && isMobileDevice) {
             joystickContainer.classList.remove('hidden');
           } else {
             joystickContainer.classList.add('hidden');
@@ -1186,8 +1230,11 @@
       window.enterFullscreen = enterFullscreen;
       window.exitFullscreen = exitFullscreen;
 
-      // Event listener para ajustar el tamaño en modo pantalla completa
+      // Verificar al cargar y cuando cambie el tamaño de la ventana
+      window.addEventListener('load', checkIfMobile);
       window.addEventListener('resize', () => {
+        checkIfMobile();
+        // Si estamos en fullscreen, mantener el tamaño correcto
         const gameContainer = document.querySelector('.game-container');
         if (gameContainer?.classList.contains('fullscreen-mode')) {
           enterFullscreen();
@@ -1268,13 +1315,6 @@
       // Event listeners para el botón de salir de pantalla completa
       const exitFullscreenButton = document.getElementById('exitFullscreenButton');
       exitFullscreenButton?.addEventListener('click', exitFullscreen);
-
-      // Event listener para actualizar la visibilidad del joystick al redimensionar
-      window.addEventListener('resize', () => {
-        if (game && !game.isDemoMode()) {
-          updateJoystickVisibility(true);
-        }
-      });
     </script>
   </body>
 </html>
