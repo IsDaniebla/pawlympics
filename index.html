@@ -372,7 +372,7 @@
 
       .joystick-container {
         position: absolute;
-        bottom: 120px;
+        bottom: 20px;
         right: 20px;
         z-index: 1000;
         touch-action: none;
@@ -469,6 +469,106 @@
         margin-top: 10px;
         color: #bdc3c7;
       }
+
+      .fullscreen-button {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 1000;
+        background: rgba(0, 0, 0, 0.5);
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        width: 40px;
+        height: 40px;
+        transition: background 0.3s ease;
+      }
+
+      .fullscreen-button:hover {
+        background: rgba(0, 0, 0, 0.7);
+      }
+
+      .exit-fullscreen-button {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 1001;
+        background: rgba(0, 0, 0, 0.5);
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        width: 40px;
+        height: 40px;
+      }
+
+      .exit-fullscreen-button:hover {
+        background: rgba(0, 0, 0, 0.7);
+      }
+
+      .fullscreen-mode {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: black;
+        z-index: 999;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+        box-sizing: border-box;
+      }
+
+      .fullscreen-mode .game-title,
+      .fullscreen-mode .game-controls,
+      .fullscreen-mode .game-info,
+      .fullscreen-mode .footer,
+      .fullscreen-mode .modal {
+        display: none !important;
+      }
+
+      .fullscreen-mode .canvas-container {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: black;
+        width: fit-content;
+        height: fit-content;
+      }
+
+      .fullscreen-mode canvas {
+        position: relative;
+        width: auto;
+        height: auto;
+        max-width: 95vw;
+        max-height: 95vh;
+      }
+
+      .canvas-container {
+        position: relative;
+        width: 800px;
+        height: 400px;
+      }
+
+      .fullscreen-mode .game-controls,
+      .fullscreen-mode .game-info,
+      .fullscreen-mode .footer {
+        display: none;
+      }
     </style>
   </head>
   <body>
@@ -554,8 +654,10 @@
         </div>
       </div>
 
-      <div style="position: relative;">
+      <div class="canvas-container">
         <canvas id="gameCanvas" width="800" height="400"></canvas>
+        <button id="fullscreenButton" class="fullscreen-button" title="Pantalla completa">⛶</button>
+        <button id="exitFullscreenButton" class="exit-fullscreen-button" title="Salir de pantalla completa">✕</button>
         <div class="audio-controls">
           <div class="volume-control">
             <div class="volume-icon" id="muteButton" title="Mutear/Desmutear">
@@ -642,7 +744,7 @@
         document.getElementById('successfulHurdles').textContent = '0';
         document.getElementById('score').textContent = '0';
         
-        showJoystick(); // Mostrar el joystick al iniciar el juego
+        showJoystick(); // Asegurar que el joystick esté visible
         
         game.setTotalHurdles(hurdlesCount);
         game.restart();
@@ -780,6 +882,122 @@
           }
         });
 
+        // Configuración de pantalla completa
+        const fullscreenButton = document.getElementById('fullscreenButton');
+        const exitFullscreenButton = document.getElementById('exitFullscreenButton');
+        const gameContainer = document.querySelector('.game-container');
+        const canvas = document.getElementById('gameCanvas');
+        const audioControls = document.querySelector('.audio-controls');
+        const joystickContainer = document.getElementById('joystick-container');
+
+        function enterFullscreen() {
+          if (gameContainer && canvas) {
+            gameContainer.classList.add('fullscreen-mode');
+            gameContainer.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            
+            // Calcular el tamaño óptimo para el canvas
+            const aspectRatio = 800 / 400; // Proporción original del canvas
+            const maxWidth = window.innerWidth * 0.95;
+            const maxHeight = window.innerHeight * 0.95;
+            let newWidth, newHeight;
+
+            if (maxWidth / aspectRatio <= maxHeight) {
+              // Si el ancho es el factor limitante
+              newWidth = maxWidth;
+              newHeight = maxWidth / aspectRatio;
+            } else {
+              // Si el alto es el factor limitante
+              newHeight = maxHeight;
+              newWidth = maxHeight * aspectRatio;
+            }
+
+            // Aplicar el nuevo tamaño manteniendo la proporción
+            canvas.style.width = `${Math.floor(newWidth)}px`;
+            canvas.style.height = `${Math.floor(newHeight)}px`;
+
+            // Mostrar el botón de salir y ocultar el de entrar
+            if (fullscreenButton && exitFullscreenButton) {
+              fullscreenButton.style.display = 'none';
+              exitFullscreenButton.style.display = 'flex';
+            }
+
+            // Ocultar todo excepto el canvas y sus controles
+            document.querySelectorAll('.game-title, .game-controls, .game-info, .footer').forEach(el => {
+              if (el instanceof HTMLElement) {
+                el.style.display = 'none';
+              }
+            });
+
+            // Ajustar posición de los controles
+            if (audioControls) {
+              audioControls.style.position = 'absolute';
+              audioControls.style.right = '20px';
+              audioControls.style.top = '20px';
+            }
+            if (joystickContainer) {
+              joystickContainer.style.position = 'absolute';
+              joystickContainer.style.right = '20px';
+              joystickContainer.style.bottom = '20px';
+            }
+          }
+        }
+
+        function exitFullscreen() {
+          if (gameContainer && canvas) {
+            gameContainer.classList.remove('fullscreen-mode');
+            gameContainer.style.display = '';
+            document.body.style.overflow = '';
+            
+            // Restaurar el tamaño original del canvas
+            canvas.style.width = '800px';
+            canvas.style.height = '400px';
+
+            // Mostrar el botón de entrar y ocultar el de salir
+            if (fullscreenButton && exitFullscreenButton) {
+              fullscreenButton.style.display = 'flex';
+              exitFullscreenButton.style.display = 'none';
+            }
+
+            // Restaurar la visibilidad de todos los elementos
+            document.querySelectorAll('.game-title, .game-controls, .game-info, .footer').forEach(el => {
+              if (el instanceof HTMLElement) {
+                el.style.display = '';
+              }
+            });
+
+            // Restaurar posición de los controles
+            if (audioControls) {
+              audioControls.style.position = '';
+              audioControls.style.right = '';
+              audioControls.style.top = '';
+            }
+            if (joystickContainer) {
+              joystickContainer.style.position = '';
+              joystickContainer.style.right = '';
+              joystickContainer.style.bottom = '';
+            }
+          }
+        }
+
+        // Event listeners para los botones de pantalla completa
+        fullscreenButton?.addEventListener('click', enterFullscreen);
+        exitFullscreenButton?.addEventListener('click', exitFullscreen);
+
+        // Event listener para ajustar el tamaño en modo pantalla completa
+        window.addEventListener('resize', () => {
+          if (gameContainer?.classList.contains('fullscreen-mode')) {
+            enterFullscreen();
+          }
+        });
+
+        // Event listener para la tecla ESC
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && gameContainer?.classList.contains('fullscreen-mode')) {
+            exitFullscreen();
+          }
+        });
+
         updatePlayerInfo('Invitado');
         updateScoreTable();
         initGame();
@@ -844,7 +1062,7 @@
       function handleGameOver() {
         const joystickContainer = document.getElementById('joystick-container');
         if (joystickContainer) {
-          joystickContainer.classList.add('hidden');
+          joystickContainer.classList.remove('hidden');
         }
       }
 
