@@ -101,6 +101,8 @@ export class Game {
         action: () => void;
     }[] = [];
 
+    private activeTimeouts: number[] = []; // Nueva propiedad para rastrear timeouts
+
     constructor(canvasId: string, scoreSystem: ScoreSystem) {
         this.scoreSystem = scoreSystem;
         this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
@@ -203,6 +205,10 @@ export class Game {
             cancelAnimationFrame(this.gameLoopId);
             this.gameLoopId = null;
         }
+
+        // Limpiar todos los timeouts activos
+        this.activeTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
+        this.activeTimeouts = [];
 
         // Remover event listeners antiguos
         document.removeEventListener('keydown', this.boundKeydownHandler);
@@ -1187,7 +1193,8 @@ export class Game {
     private handleFailedJump() {
         const checkRecovery = () => {
             if (this.dog.isInRecovery() || this.dog.isInReturnState()) {
-                setTimeout(checkRecovery, 100);
+                const timeoutId = setTimeout(checkRecovery, 100);
+                this.activeTimeouts.push(timeoutId);
             } else {
                 if (this.currentHurdle >= this.totalHurdles) {
                     this.handleGameOver();
@@ -1197,7 +1204,8 @@ export class Game {
             }
         };
 
-        setTimeout(checkRecovery, 500);
+        const timeoutId = setTimeout(checkRecovery, 500);
+        this.activeTimeouts.push(timeoutId);
     }
 
     private handleJumpResult(isSuccess: boolean) {
@@ -1209,7 +1217,8 @@ export class Game {
         // Para saltos exitosos, esperar a que el perro regrese
         const checkReturn = () => {
             if (this.dog.isInReturnState()) {
-                setTimeout(checkReturn, 100);
+                const timeoutId = setTimeout(checkReturn, 100);
+                this.activeTimeouts.push(timeoutId);
             } else {
                 // En modo demostración, no incrementar el contador de vallas exitosas
                 if (!this.isInDemoMode) {
@@ -1224,7 +1233,8 @@ export class Game {
             }
         };
 
-        setTimeout(checkReturn, 1000);
+        const timeoutId = setTimeout(checkReturn, 1000);
+        this.activeTimeouts.push(timeoutId);
     }
 
     private updateTrafficLightPosition(currentTime: number) {
