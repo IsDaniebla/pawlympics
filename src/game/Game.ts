@@ -89,7 +89,7 @@ export class Game {
     private shieldAngle: number = Math.PI; // Ángulo inicial del escudo (180 grados)
     private isInDemoMode: boolean = false;
 
-    
+
     private readonly BUTTON_HEIGHT = 30;
     private readonly BUTTON_FONT = '16px Arial';
     private buttons: {
@@ -126,7 +126,7 @@ export class Game {
         // Eventos táctiles para móviles
         this.canvas.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: false });
         this.canvas.addEventListener('touchend', this.handleTouchEnd.bind(this), { passive: false });
-        
+
         // Eventos de mouse para desktop
         this.canvas.addEventListener('click', this.handleClick.bind(this));
         this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
@@ -506,7 +506,7 @@ export class Game {
                     // Aumentar la velocidad en modo demo
                     this.terrainSpeed = this.BASE_TERRAIN_SPEED * this.ACCELERATED_SPEED_MULTIPLIER;
                 }
-                
+
                 // Si llegamos al último color (rojo) y no se ha seleccionado ningún color
                 if (!this.hasClickedThisHurdle && this.currentColorIndex === this.trafficLightColors.length - 1) {
                     this.isTrafficLightStopped = true;
@@ -803,7 +803,7 @@ export class Game {
             this.backgroundMusic.loop = true;
             this.backgroundMusic.volume = parseInt(this.volumeSlider.value) / 100;
             this.previousVolume = this.backgroundMusic.volume;
-            
+
             // Solo establecer autoplay si no es móvil o está en pantalla completa
             this.backgroundMusic.autoplay = !isMobile || isFullscreen;
 
@@ -878,9 +878,9 @@ export class Game {
         }
     }
 
-    private handleFullscreenChange(isFullscreen: boolean) {
+    public handleFullscreenChange(isFullscreen: boolean) {
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        
+
         if (isMobile) {
             if (isFullscreen) {
                 // Reactivar el sonido si está en pantalla completa
@@ -903,7 +903,7 @@ export class Game {
 
     private handleTouchStart(e: TouchEvent) {
         e.preventDefault(); // Prevenir el comportamiento por defecto
-        
+
         // Verificar si algún toque es en los botones
         const rect = this.canvas.getBoundingClientRect();
         const scaleX = this.canvas.width / rect.width;
@@ -940,7 +940,7 @@ export class Game {
 
     private handleTouchEnd(e: TouchEvent) {
         e.preventDefault(); // Prevenir el comportamiento por defecto
-        
+
         if (this.gameOver) {
             // Disparar un evento personalizado para mostrar el joystick
             const showJoystickEvent = new CustomEvent('showJoystick');
@@ -953,7 +953,7 @@ export class Game {
         const rect = this.canvas.getBoundingClientRect();
         const scaleX = this.canvas.width / rect.width;
         const scaleY = this.canvas.height / rect.height;
-        
+
         const clickX = (e.clientX - rect.left) * scaleX;
         const clickY = (e.clientY - rect.top) * scaleY;
 
@@ -1191,7 +1191,7 @@ export class Game {
                 if (!this.isInDemoMode) {
                     this.successfulHurdles++;
                 }
-                
+
                 if (!this.isInDemoMode && this.currentHurdle >= this.totalHurdles) {
                     this.handleGameOver();
                 } else {
@@ -1453,16 +1453,16 @@ export class Game {
     private initializeButtons() {
         const buttonY = 10;
         const buttonPadding = 10;
-        
+
         // Botón de reiniciar
         const restartText = '🔄 Reiniciar';
         this.ctx.font = this.BUTTON_FONT;
         const restartWidth = this.ctx.measureText(restartText).width + (buttonPadding * 2);
-        
+
         // Botón de ayuda
         const helpText = '❓ Ayuda';
         const helpWidth = this.ctx.measureText(helpText).width + (buttonPadding * 2);
-        
+
         // Posicionar los botones en la esquina superior derecha
         const restartX = this.canvas.width - restartWidth - helpWidth - 20;
         const helpX = this.canvas.width - helpWidth - 10;
@@ -1489,7 +1489,7 @@ export class Game {
 
     private drawButtons() {
         this.ctx.save();
-        
+
         for (const button of this.buttons) {
             // Dibujar el fondo del botón
             this.ctx.fillStyle = '#4CAF50';
