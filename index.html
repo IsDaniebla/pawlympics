@@ -1449,18 +1449,37 @@
       const baseRect = joystickBase.getBoundingClientRect();
       const maxDistance = (baseRect.width - joystickStick.offsetWidth) / 2;
       let isJoystickActive = false;
+      let joystickTouchId = null;
 
       function handleJoystickStart(e) {
+        if (e.type.startsWith('touch')) {
+          // Guardar el ID del touch que inició el joystick
+          joystickTouchId = e.touches[0].identifier;
+        }
         isDragging = true;
         isJoystickActive = true;
         handleJoystickMove(e);
-        e.stopPropagation(); // Evitar que el evento llegue al canvas
+        e.stopPropagation();
+        e.preventDefault();
       }
 
       function handleJoystickMove(e) {
         if (!isDragging) return;
 
-        const touch = e.type.startsWith('touch') ? e.touches[0] : e;
+        let touch;
+        if (e.type.startsWith('touch')) {
+          // Encontrar el touch correcto usando el ID guardado
+          for (let i = 0; i < e.touches.length; i++) {
+            if (e.touches[i].identifier === joystickTouchId) {
+              touch = e.touches[i];
+              break;
+            }
+          }
+          if (!touch) return; // Si no encontramos el touch correcto, no hacer nada
+        } else {
+          touch = e;
+        }
+
         const baseRect = joystickBase.getBoundingClientRect();
         const centerX = baseRect.left + baseRect.width / 2;
         const centerY = baseRect.top + baseRect.height / 2;
@@ -1468,47 +1487,69 @@
         let deltaX = touch.clientX - centerX;
         let deltaY = touch.clientY - centerY;
 
-        // Calcular la distancia desde el centro
         const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
         const angle = Math.atan2(deltaY, deltaX);
 
-        // Limitar la distancia al radio máximo
         if (distance > maxDistance) {
           deltaX = Math.cos(angle) * maxDistance;
           deltaY = Math.sin(angle) * maxDistance;
         }
 
-        // Actualizar la posición del stick manteniendo el centrado
         joystickStick.style.transform = `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px))`;
 
-        // Actualizar el ángulo del escudo en el juego
         if (game) {
           game.setShieldAngle(angle);
         }
 
-        e.stopPropagation(); // Evitar que el evento llegue al canvas
-        e.preventDefault(); // Prevenir el comportamiento por defecto
+        e.stopPropagation();
+        e.preventDefault();
       }
 
       function handleJoystickEnd(e) {
+        if (e.type.startsWith('touch')) {
+          // Verificar si el touch que terminó es el que estaba controlando el joystick
+          let touchFound = false;
+          for (let i = 0; i < e.changedTouches.length; i++) {
+            if (e.changedTouches[i].identifier === joystickTouchId) {
+              touchFound = true;
+              break;
+            }
+          }
+          if (!touchFound) return; // Si no es el touch del joystick, ignorar
+        }
+        
         isDragging = false;
         isJoystickActive = false;
-        // Volver el stick al centro usando translate(-50%, -50%) para centrarlo correctamente
+        joystickTouchId = null;
         joystickStick.style.transform = 'translate(-50%, -50%)';
-        e.stopPropagation(); // Evitar que el evento llegue al canvas
+        e.stopPropagation();
+        e.preventDefault();
       }
 
       // Eventos táctiles y de mouse para el joystick
-      joystickBase.addEventListener('mousedown', handleJoystickStart, { passive: false });
+      joystickBase.addEventListener('mousedown', handleJoystickStart);
       joystickBase.addEventListener('touchstart', handleJoystickStart, { passive: false });
-      document.addEventListener('mousemove', handleJoystickMove, { passive: false });
+      document.addEventListener('mousemove', handleJoystickMove);
       document.addEventListener('touchmove', handleJoystickMove, { passive: false });
-      document.addEventListener('mouseup', handleJoystickEnd, { passive: false });
+      document.addEventListener('mouseup', handleJoystickEnd);
       document.addEventListener('touchend', handleJoystickEnd, { passive: false });
+      document.addEventListener('touchcancel', handleJoystickEnd, { passive: false });
 
       // Modificar el manejo de eventos del canvas para verificar si el joystick está activo
       function handleCanvasTouch(e) {
-        if (isJoystickActive) return; // No procesar eventos del canvas si el joystick está activo
+        // Verificar si el touch está en el área del joystick
+        if (e.type.startsWith('touch')) {
+          const touch = e.touches[0];
+          const joystickRect = joystickBase.getBoundingClientRect();
+          if (
+            touch.clientX >= joystickRect.left &&
+            touch.clientX <= joystickRect.right &&
+            touch.clientY >= joystickRect.top &&
+            touch.clientY <= joystickRect.bottom
+          ) {
+            return; // No procesar si el touch está en el área del joystick
+          }
+        }
         
         if (game) {
           if (game.gameOver) {
@@ -1526,7 +1567,7 @@
       const gameCanvas = document.getElementById('gameCanvas');
       if (gameCanvas) {
         gameCanvas.addEventListener('touchstart', handleCanvasTouch, { passive: false });
-        gameCanvas.addEventListener('click', handleCanvasTouch, { passive: false });
+        gameCanvas.addEventListener('click', handleCanvasTouch);
       }
 
       // Agregar el evento para mostrar el joystick
