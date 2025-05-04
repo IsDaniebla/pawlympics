@@ -645,16 +645,33 @@ export class Game {
         // Dibujar la valla
         this.hurdle.draw(this.ctx);
 
-        // Actualizar la información del juego en los paneles HTML
-        this.updateGameInfo();
-
         // Dibujar flechas
         for (const arrow of this.arrows) {
             arrow.draw(this.ctx);
         }
 
+        // Solo mostrar la información del juego si está en fullscreen
+        const gameContainer = document.querySelector('.game-container');
+        if (gameContainer && gameContainer.classList.contains('fullscreen-mode')) {
+            // Dibujar información del juego en el canvas
+            this.ctx.save();
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            this.ctx.roundRect(10, 10, 200, 80, 10);
+            this.ctx.fill();
+
+            this.ctx.fillStyle = 'white';
+            this.ctx.font = 'bold 20px Arial';
+            this.ctx.textAlign = 'left';
+            this.ctx.fillText(`Vallas: ${this.currentHurdle}/${this.totalHurdles}`, 20, 40);
+            this.ctx.fillText(`Puntos: ${this.score}`, 20, 70);
+            this.ctx.restore();
+        }
+
         // Dibujar los botones después de todo lo demás
         this.drawButtons();
+
+        // Actualizar la información del juego en los paneles HTML
+        this.updateGameInfo();
 
         if (this.gameOver) {
             // Si es el primer frame de gameOver, guardar el tiempo y reproducir sonido
