@@ -846,11 +846,8 @@
         // Detectar si es móvil por el user agent
         const mobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         
-        // Detectar si es móvil por el tamaño de la pantalla
-        const mobileSize = window.innerWidth <= 850;
-        
-        // Considerar móvil si cumple alguna de las dos condiciones
-        isMobileDevice = mobileUA || mobileSize;
+        // Considerar móvil si el user agent lo indica, independientemente del tamaño
+        isMobileDevice = mobileUA;
 
         // Actualizar visibilidad de elementos
         const actionPanel = document.querySelector('.action-panel');
@@ -1235,8 +1232,8 @@
             joystickContainer.style.bottom = '';
           }
 
-          // Ocultar el canvas en versión móvil
-          if (window.innerWidth <= 850 && canvasContainer) {
+          // Ocultar el canvas en dispositivos móviles
+          if (canvasContainer && isMobileDevice) {
             canvasContainer.style.display = 'none';
           }
         }
