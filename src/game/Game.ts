@@ -358,7 +358,6 @@ export class Game {
         this.isTrafficLightStopped = false;
         this.hasClickedThisHurdle = false;
 
-        // Reiniciar la velocidad al valor base
         this.terrainSpeed = this.BASE_TERRAIN_SPEED;
 
         this.generateColorSequence();
@@ -533,7 +532,6 @@ export class Game {
                 if (this.isInDemoMode && this.currentColorIndex === this.trafficLightColors.length - 2) {
                     this.isTrafficLightStopped = true;
                     this.hasClickedThisHurdle = true;
-                    // Aumentar la velocidad en modo demo
                     this.terrainSpeed = this.BASE_TERRAIN_SPEED * this.ACCELERATED_SPEED_MULTIPLIER;
                 }
 
@@ -959,12 +957,7 @@ export class Game {
                 }
             }
 
-            // Si no es un toque en un botón y no se ha detenido el semáforo
-            if (!isButtonTouch && !this.hasClickedThisHurdle) {
-                this.isTrafficLightStopped = true;
-                this.hasClickedThisHurdle = true;
-                this.terrainSpeed = this.BASE_TERRAIN_SPEED * this.ACCELERATED_SPEED_MULTIPLIER;
-            }
+
         }
     }
 
@@ -1002,14 +995,9 @@ export class Game {
 
         // Si no se hizo clic en ningún botón, manejar el clic normal del juego
         if (this.gameOver) {
-            // Disparar un evento personalizado para mostrar el joystick
             const showJoystickEvent = new CustomEvent('showJoystick');
             document.dispatchEvent(showJoystickEvent);
             this.initializeGame();
-        } else if (!this.hasClickedThisHurdle) {
-            this.isTrafficLightStopped = true;
-            this.hasClickedThisHurdle = true;
-            this.terrainSpeed = this.BASE_TERRAIN_SPEED * this.ACCELERATED_SPEED_MULTIPLIER;
         }
 
         // Prevenir comportamientos por defecto
