@@ -479,12 +479,8 @@ export class Game {
                 if (this.isInDemoMode && this.currentColorIndex === this.trafficLightColors.length - 2) {
                     this.isTrafficLightStopped = true;
                     this.hasClickedThisHurdle = true;
-                    
-                    // Aumentar la velocidad en modo demo si se detuvo en un color válido
-                    const currentColor = this.trafficLightColors[this.currentColorIndex];
-                    if (currentColor === 'green' || currentColor === 'yellow' || currentColor === 'orange') {
-                        this.terrainSpeed = this.BASE_TERRAIN_SPEED * this.ACCELERATED_SPEED_MULTIPLIER;
-                    }
+                    // Aumentar la velocidad en modo demo
+                    this.terrainSpeed = this.BASE_TERRAIN_SPEED * this.ACCELERATED_SPEED_MULTIPLIER;
                 }
                 
                 // Si llegamos al último color (rojo) y no se ha seleccionado ningún color
@@ -826,11 +822,8 @@ export class Game {
             this.isTrafficLightStopped = true;
             this.hasClickedThisHurdle = true;
 
-            // Aumentar la velocidad si se detuvo en un color válido
-            const currentColor = this.trafficLightColors[this.currentColorIndex];
-            if (currentColor === 'green' || currentColor === 'yellow' || currentColor === 'orange') {
-                this.terrainSpeed = this.BASE_TERRAIN_SPEED * this.ACCELERATED_SPEED_MULTIPLIER;
-            }
+            // Aumentar la velocidad siempre que se seleccione un color
+            this.terrainSpeed = this.BASE_TERRAIN_SPEED * this.ACCELERATED_SPEED_MULTIPLIER;
         }
         // Prevenir comportamientos por defecto
         e.preventDefault();
