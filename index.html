@@ -32,6 +32,7 @@
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         width: 800px;
+        justify-content: center;
       }
       .game-info {
         display: flex;
@@ -247,13 +248,17 @@
       .player-select-container {
         position: relative;
         width: 200px;
-        margin-right: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
       }
       .player-select {
         width: 100%;
         padding: 8px;
         border: 1px solid #ddd;
         border-radius: 4px;
+        text-align: center;
       }
       .player-list {
         position: absolute;
@@ -311,14 +316,16 @@
       /* Ajustar el estilo del select de vallas */
       .hurdles-select-container {
         display: flex;
+        flex-direction: column;
         align-items: center;
-        gap: 10px;
+        gap: 5px;
       }
       #hurdlesCount {
         width: 70px;
         padding: 8px;
         border: 1px solid #ddd;
         border-radius: 4px;
+        text-align: center;
       }
 
       /* Estilos para el modal de instrucciones */
@@ -653,6 +660,13 @@
           display: none;
         }
       }
+
+      .player-select-container label,
+      .hurdles-select-container label {
+        margin-bottom: 5px;
+        color: #333;
+        font-weight: 500;
+      }
     </style>
   </head>
   <body>
@@ -679,6 +693,7 @@
 
       <div class="game-controls">
         <div class="player-select-container">
+          <label for="playerSelect">Nombre del jugador:</label>
           <input type="text" id="playerSelect" class="player-select" placeholder="Nombre del jugador">
           <div id="playerList" class="player-list"></div>
         </div>
