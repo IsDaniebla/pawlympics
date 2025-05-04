@@ -381,6 +381,12 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        transition: opacity 0.3s ease;
+      }
+
+      .joystick-container.hidden {
+        opacity: 0;
+        pointer-events: none;
       }
 
       .joystick-base {
@@ -575,6 +581,8 @@
         document.getElementById('currentHurdle').textContent = game.isDemoMode() ? '-/-' : `1/${hurdlesCount}`;
         document.getElementById('successfulHurdles').textContent = '0';
         document.getElementById('score').textContent = '0';
+        
+        showJoystick(); // Mostrar el joystick al iniciar el juego
         
         game.setTotalHurdles(hurdlesCount);
         game.restart();
@@ -772,6 +780,26 @@
       document.addEventListener('touchmove', handleJoystickMove);
       document.addEventListener('mouseup', handleJoystickEnd);
       document.addEventListener('touchend', handleJoystickEnd);
+
+      function handleGameOver() {
+        const joystickContainer = document.getElementById('joystick-container');
+        if (joystickContainer) {
+          joystickContainer.classList.add('hidden');
+        }
+      }
+
+      function showJoystick() {
+        const joystickContainer = document.getElementById('joystick-container');
+        if (joystickContainer) {
+          joystickContainer.classList.remove('hidden');
+        }
+      }
+
+      // Agregar el evento para escuchar cuando el juego termina
+      document.addEventListener('gameOver', handleGameOver);
+
+      // Agregar el evento para mostrar el joystick
+      document.addEventListener('showJoystick', showJoystick);
     </script>
   </body>
 </html>

@@ -200,6 +200,10 @@ export class Game {
         this.gameOverStartTime = 0;
         this.isJumping = false;
 
+        // Mostrar el joystick al iniciar o reiniciar el juego
+        const showJoystickEvent = new CustomEvent('showJoystick');
+        document.dispatchEvent(showJoystickEvent);
+
         this.isTransitioning = false;
         this.nextHurdleReady = false;
         this.trafficLightColors = ['red'];
@@ -816,6 +820,9 @@ export class Game {
 
     private handleClick(e: MouseEvent) {
         if (this.gameOver) {
+            // Disparar un evento personalizado para mostrar el joystick
+            const showJoystickEvent = new CustomEvent('showJoystick');
+            document.dispatchEvent(showJoystickEvent);
             this.initializeGame();
         } else if (!this.hasClickedThisHurdle) {
             // Detener el semáforo en el color actual
@@ -834,6 +841,9 @@ export class Game {
         if (e.repeat) return;
 
         if (e.code === 'Space' && this.gameOver) {
+            // Disparar un evento personalizado para mostrar el joystick
+            const showJoystickEvent = new CustomEvent('showJoystick');
+            document.dispatchEvent(showJoystickEvent);
             this.initializeGame();
             // Prevenir el comportamiento por defecto del espacio
             e.preventDefault();
@@ -1086,6 +1096,10 @@ export class Game {
         // Actualizar la tabla de puntuaciones
         const updateScoreTableEvent = new CustomEvent('updateScoreTable');
         document.dispatchEvent(updateScoreTableEvent);
+
+        // Disparar el evento de game over
+        const gameOverEvent = new CustomEvent('gameOver');
+        document.dispatchEvent(gameOverEvent);
     }
 
     private generateArrow(): void {
