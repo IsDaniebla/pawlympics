@@ -1163,10 +1163,12 @@ export class Game {
         this.mouseX = e.clientX - rect.left;
         this.mouseY = e.clientY - rect.top;
 
-        // Calcular el ángulo del escudo basado en la posición del ratón relativa al perro
-        const dogX = this.dog.getX();
-        const dogY = this.dog.getY();
-        this.shieldAngle = Math.atan2(this.mouseY - dogY, this.mouseX - dogX);
+        // Solo actualizar el ángulo del escudo si no se está usando el joystick
+        if (!document.getElementById('joystick-base')?.matches(':active')) {
+            const dogX = this.dog.getX();
+            const dogY = this.dog.getY();
+            this.shieldAngle = Math.atan2(this.mouseY - dogY, this.mouseX - dogX);
+        }
     }
 
     private drawShield(): void {
@@ -1268,5 +1270,9 @@ export class Game {
         }
 
         return false;
+    }
+
+    public setShieldAngle(angle: number): void {
+        this.shieldAngle = angle;
     }
 }

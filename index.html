@@ -82,7 +82,7 @@
       }
       .audio-controls {
         position: absolute;
-        bottom: 20px;
+        top: 20px;
         right: 20px;
         z-index: 1000;
         display: flex;
@@ -369,6 +369,59 @@
       .help-button:hover {
         background-color: #2980b9;
       }
+
+      .joystick-container {
+        position: absolute;
+        bottom: 120px;
+        right: 20px;
+        z-index: 1000;
+        touch-action: none;
+        width: 120px;
+        height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .joystick-base {
+        width: 120px;
+        height: 120px;
+        background: rgba(0, 0, 0, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.6);
+        border-radius: 50%;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
+
+      .joystick-stick {
+        width: 50px;
+        height: 50px;
+        background: rgba(52, 152, 219, 0.9);
+        border: 2px solid rgba(255, 255, 255, 0.9);
+        border-radius: 50%;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        transition: box-shadow 0.2s ease;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+      }
+
+      .joystick-stick:hover {
+        box-shadow: 0 0 15px rgba(52, 152, 219, 0.6);
+      }
+
+      .joystick-base::after {
+        content: '';
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.6);
+        border-radius: 50%;
+      }
     </style>
   </head>
   <body>
@@ -467,6 +520,11 @@
               </div>
             </div>
             <input type="range" id="volumeSlider" class="volume-slider" min="0" max="100" value="30" title="Control de volumen">
+          </div>
+        </div>
+        <div id="joystick-container" class="joystick-container">
+          <div id="joystick-base" class="joystick-base">
+            <div id="joystick-stick" class="joystick-stick"></div>
           </div>
         </div>
       </div>
@@ -658,6 +716,62 @@
         updateScoreTable();
         initGame();
       });
+
+      // Configuración del joystick
+      let isDragging = false;
+      const joystickBase = document.getElementById('joystick-base');
+      const joystickStick = document.getElementById('joystick-stick');
+      const baseRect = joystickBase.getBoundingClientRect();
+      const maxDistance = (baseRect.width - joystickStick.offsetWidth) / 2;
+
+      function handleJoystickStart(e) {
+        isDragging = true;
+        handleJoystickMove(e);
+      }
+
+      function handleJoystickMove(e) {
+        if (!isDragging) return;
+
+        const touch = e.type.startsWith('touch') ? e.touches[0] : e;
+        const baseRect = joystickBase.getBoundingClientRect();
+        const centerX = baseRect.left + baseRect.width / 2;
+        const centerY = baseRect.top + baseRect.height / 2;
+
+        let deltaX = touch.clientX - centerX;
+        let deltaY = touch.clientY - centerY;
+
+        // Calcular la distancia desde el centro
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        const angle = Math.atan2(deltaY, deltaX);
+
+        // Limitar la distancia al radio máximo
+        if (distance > maxDistance) {
+          deltaX = Math.cos(angle) * maxDistance;
+          deltaY = Math.sin(angle) * maxDistance;
+        }
+
+        // Actualizar la posición del stick manteniendo el centrado
+        joystickStick.style.transform = `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px))`;
+
+        // Actualizar el ángulo del escudo en el juego
+        if (game) {
+          game.setShieldAngle(angle);
+        }
+      }
+
+      function handleJoystickEnd() {
+        isDragging = false;
+        // Volver el stick al centro usando translate(-50%, -50%) para centrarlo correctamente
+        joystickStick.style.transform = 'translate(-50%, -50%)';
+      }
+
+      // Eventos táctiles y de mouse
+      joystickBase.addEventListener('mousedown', handleJoystickStart);
+      joystickBase.addEventListener('touchstart', handleJoystickStart);
+      document.addEventListener('mousemove', handleJoystickMove);
+      document.addEventListener('touchmove', handleJoystickMove);
+      document.addEventListener('mouseup', handleJoystickEnd);
+      document.addEventListener('touchend', handleJoystickEnd);
     </script>
   </body>
 </html>
