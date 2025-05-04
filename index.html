@@ -353,6 +353,22 @@
         letter-spacing: 2px;
         text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
       }
+
+      .help-button {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .help-button:hover {
+        background-color: #2980b9;
+      }
     </style>
   </head>
   <body>
@@ -396,6 +412,7 @@
           <option value="10">10</option>
         </select>
         <button onclick="restartGame()">Reiniciar Juego</button>
+        <button onclick="showHelp()" class="help-button">Ayuda</button>
       </div>
 
       <div class="game-info">
@@ -591,9 +608,23 @@
         initGame();
       });
 
+      // Función para mostrar la ayuda
+      function showHelp() {
+        const modal = document.getElementById('instructions-modal');
+        if (modal) {
+          modal.style.display = 'flex';
+          // Reiniciar el juego y activar modo demostración
+          if (game) {
+            game.setDemoMode(true);
+            initGame(); // Reiniciar completamente el juego
+          }
+        }
+      }
+
       // Exponer funciones necesarias globalmente
       window.selectPlayer = selectPlayer;
       window.restartGame = initGame;
+      window.showHelp = showHelp;
 
       // Escuchar el evento de actualización de la tabla de puntuaciones
       document.addEventListener('updateScoreTable', updateScoreTable);
