@@ -1405,10 +1405,13 @@
       const joystickStick = document.getElementById('joystick-stick');
       const baseRect = joystickBase.getBoundingClientRect();
       const maxDistance = (baseRect.width - joystickStick.offsetWidth) / 2;
+      let isJoystickActive = false;
 
       function handleJoystickStart(e) {
         isDragging = true;
+        isJoystickActive = true;
         handleJoystickMove(e);
+        e.stopPropagation(); // Evitar que el evento llegue al canvas
       }
 
       function handleJoystickMove(e) {
@@ -1439,21 +1442,49 @@
         if (game) {
           game.setShieldAngle(angle);
         }
+
+        e.stopPropagation(); // Evitar que el evento llegue al canvas
+        e.preventDefault(); // Prevenir el comportamiento por defecto
       }
 
-      function handleJoystickEnd() {
+      function handleJoystickEnd(e) {
         isDragging = false;
+        isJoystickActive = false;
         // Volver el stick al centro usando translate(-50%, -50%) para centrarlo correctamente
         joystickStick.style.transform = 'translate(-50%, -50%)';
+        e.stopPropagation(); // Evitar que el evento llegue al canvas
       }
 
-      // Eventos táctiles y de mouse
-      joystickBase.addEventListener('mousedown', handleJoystickStart);
-      joystickBase.addEventListener('touchstart', handleJoystickStart);
-      document.addEventListener('mousemove', handleJoystickMove);
-      document.addEventListener('touchmove', handleJoystickMove);
-      document.addEventListener('mouseup', handleJoystickEnd);
-      document.addEventListener('touchend', handleJoystickEnd);
+      // Eventos táctiles y de mouse para el joystick
+      joystickBase.addEventListener('mousedown', handleJoystickStart, { passive: false });
+      joystickBase.addEventListener('touchstart', handleJoystickStart, { passive: false });
+      document.addEventListener('mousemove', handleJoystickMove, { passive: false });
+      document.addEventListener('touchmove', handleJoystickMove, { passive: false });
+      document.addEventListener('mouseup', handleJoystickEnd, { passive: false });
+      document.addEventListener('touchend', handleJoystickEnd, { passive: false });
+
+      // Modificar el manejo de eventos del canvas para verificar si el joystick está activo
+      function handleCanvasTouch(e) {
+        if (isJoystickActive) return; // No procesar eventos del canvas si el joystick está activo
+        
+        if (game) {
+          if (game.gameOver) {
+            game.initializeGame();
+          } else if (!game.hasClickedThisHurdle) {
+            game.isTrafficLightStopped = true;
+            game.hasClickedThisHurdle = true;
+            game.terrainSpeed = game.BASE_TERRAIN_SPEED * game.ACCELERATED_SPEED_MULTIPLIER;
+          }
+        }
+        e.preventDefault();
+      }
+
+      // Reemplazar los event listeners del canvas
+      const gameCanvas = document.getElementById('gameCanvas');
+      if (gameCanvas) {
+        gameCanvas.addEventListener('touchstart', handleCanvasTouch, { passive: false });
+        gameCanvas.addEventListener('click', handleCanvasTouch, { passive: false });
+      }
 
       // Agregar el evento para mostrar el joystick
       document.addEventListener('showJoystick', showJoystick);
