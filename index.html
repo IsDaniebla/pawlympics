@@ -187,20 +187,27 @@
       }
       .audio-controls {
         position: absolute;
-        top: 20px;
-        right: 20px;
+        top: auto;
+        bottom: 20px;
+        left: 20px;
         z-index: 1000;
         display: flex;
-        flex-direction: column-reverse;
+        flex-direction: row;
         align-items: center;
         gap: 10px;
+      }
+      .fullscreen-mode .audio-controls {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        top: auto;
       }
       .volume-control {
         position: relative;
         display: flex;
-        flex-direction: column-reverse;
+        flex-direction: row;
         align-items: center;
-        height: 120px;
+        height: 32px;
       }
       .volume-icon {
         background: none;
@@ -225,19 +232,19 @@
         color: rgba(255, 68, 68, 0.9);
       }
       .volume-slider {
-        height: 0;
-        width: 4px;
+        width: 0;
+        height: 4px;
         background: rgba(255, 255, 255, 0.8);
         border-radius: 2px;
         position: absolute;
-        bottom: 50px;
-        left: 50%;
-        transform: translateX(-50%);
-        transition: height 0.3s ease;
+        left: 40px;
+        top: 50%;
+        transform: translateY(-50%);
+        transition: width 0.3s ease;
         opacity: 0;
         pointer-events: none;
-        writing-mode: bt-lr;
-        -webkit-appearance: slider-vertical;
+        -webkit-appearance: none;
+        appearance: none;
       }
       .volume-slider::-webkit-slider-thumb {
         -webkit-appearance: none;
@@ -258,34 +265,35 @@
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
       }
       .volume-control:hover .volume-slider {
-        height: 100px;
+        width: 100px;
         opacity: 1;
         pointer-events: all;
+        z-index: 3;
       }
       .volume-lines {
         position: absolute;
-        top: -5px;
-        left: 50%;
-        transform: translateX(-50%);
+        right: -5px;
+        top: 50%;
+        transform: translateY(-50%);
         display: flex;
-        flex-direction: column-reverse;
+        flex-direction: row;
         gap: 3px;
         opacity: 0;
         transition: opacity 0.3s ease;
-        height: 16px;
+        width: 16px;
       }
       .volume-icon:hover .volume-lines {
         opacity: 1;
       }
       .volume-line {
-        height: 2px;
+        width: 2px;
         background-color: rgba(255, 255, 255, 0.9);
         border-radius: 1px;
         box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
       }
-      .volume-line:nth-child(1) { width: 8px; }
-      .volume-line:nth-child(2) { width: 12px; }
-      .volume-line:nth-child(3) { width: 16px; }
+      .volume-line:nth-child(1) { height: 8px; }
+      .volume-line:nth-child(2) { height: 12px; }
+      .volume-line:nth-child(3) { height: 16px; }
 
       /* Estilos para el selector de jugador */
       .player-select-container {
@@ -1301,8 +1309,9 @@
           // Ajustar controles
           if (audioControls) {
             audioControls.style.position = 'absolute';
-            audioControls.style.right = '20px';
-            audioControls.style.top = '20px';
+            audioControls.style.left = '20px';
+            audioControls.style.bottom = '20px';
+            audioControls.style.top = 'auto';
           }
           if (joystickContainer) {
             joystickContainer.style.position = 'absolute';
@@ -1367,7 +1376,8 @@
           // Restaurar posición de los controles
           if (audioControls) {
             audioControls.style.position = '';
-            audioControls.style.right = '';
+            audioControls.style.left = '';
+            audioControls.style.bottom = '';
             audioControls.style.top = '';
           }
           if (joystickContainer) {
