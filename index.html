@@ -22,6 +22,8 @@
         padding: 20px;
         max-width: 1000px;
         margin: 0 auto;
+        min-height: 100vh;
+        overflow: hidden;
       }
       .game-controls {
         display: flex;
@@ -31,15 +33,17 @@
         padding: 15px 20px;
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        width: 800px;
+        width: 100%;
+        max-width: 800px;
         justify-content: center;
       }
       .game-info {
         display: flex;
         flex-wrap: wrap;
-        justify-content: space-between;
+        justify-content: center;
         gap: 20px;
-        width: 800px;
+        width: 100%;
+        max-width: 800px;
         margin-bottom: 20px;
       }
       .score-panel, .points-panel, .mini-scoreboard, .action-panel {
@@ -49,6 +53,7 @@
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         min-width: 180px;
         flex: 1;
+        max-width: calc(50% - 10px);
       }
       .score-panel h3, .points-panel h3, .mini-scoreboard h3, .action-panel h3 {
         margin: 0 0 10px 0;
@@ -104,6 +109,19 @@
           flex-direction: column;
           justify-content: center;
           align-items: center;
+        }
+        .game-info {
+          padding: 0 10px;
+        }
+        
+        .score-panel, .points-panel, .mini-scoreboard, .action-panel {
+          min-width: unset;
+          max-width: 100%;
+          width: 100%;
+        }
+
+        .game-controls {
+          padding: 15px 10px;
         }
       }
       @media (min-width: 851px) {
