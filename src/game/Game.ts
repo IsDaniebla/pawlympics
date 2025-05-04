@@ -123,13 +123,16 @@ export class Game {
         this.initializeGrassAndFlowers();
         this.initializeGame();
 
+        // Eventos táctiles para móviles
+        this.canvas.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: false });
+        this.canvas.addEventListener('touchend', this.handleTouchEnd.bind(this), { passive: false });
+        
+        // Eventos de mouse para desktop
+        this.canvas.addEventListener('click', this.handleClick.bind(this));
         this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
 
         // Inicializar los botones
         this.initializeButtons();
-
-        // Agregar el event listener para los clics en los botones
-        this.canvas.addEventListener('click', this.handleCanvasClick.bind(this));
     }
 
     public setTotalHurdles(count: number) {
@@ -196,6 +199,8 @@ export class Game {
 
     private cleanup() {
         document.removeEventListener('keydown', this.boundKeydownHandler);
+        this.canvas.removeEventListener('touchstart', this.handleTouchStart);
+        this.canvas.removeEventListener('touchend', this.handleTouchEnd);
         this.canvas.removeEventListener('click', this.boundClickHandler);
         if (this.gameLoopId !== null) {
             cancelAnimationFrame(this.gameLoopId);
@@ -211,7 +216,7 @@ export class Game {
         this.currentHurdle = 1;
         this.successfulHurdles = 0;
         this.gameOver = false;
-        this.effects.setGameOver(false); // Actualizar el estado en los efectos
+        this.effects.setGameOver(false);
         this.gameOverStartTime = 0;
         this.isJumping = false;
 
@@ -242,6 +247,8 @@ export class Game {
 
         // Agregar los event listeners
         document.addEventListener('keydown', this.boundKeydownHandler);
+        this.canvas.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: false });
+        this.canvas.addEventListener('touchend', this.handleTouchEnd.bind(this), { passive: false });
         this.canvas.addEventListener('click', this.boundClickHandler);
 
         // Inicializar todas las posiciones posibles de flechas
@@ -850,20 +857,87 @@ export class Game {
         }
     }
 
+    private handleTouchStart(e: TouchEvent) {
+        e.preventDefault(); // Prevenir el comportamiento por defecto
+        
+        // Verificar si algún toque es en los botones
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+
+        for (let i = 0; i < e.touches.length; i++) {
+            const touch = e.touches[i];
+            const touchX = (touch.clientX - rect.left) * scaleX;
+            const touchY = (touch.clientY - rect.top) * scaleY;
+
+            // Verificar si el toque es en algún botón
+            let isButtonTouch = false;
+            for (const button of this.buttons) {
+                if (
+                    touchX >= button.x &&
+                    touchX <= button.x + button.width &&
+                    touchY >= button.y &&
+                    touchY <= button.y + button.height
+                ) {
+                    button.action();
+                    isButtonTouch = true;
+                    break;
+                }
+            }
+
+            // Si no es un toque en un botón y no se ha detenido el semáforo
+            if (!isButtonTouch && !this.hasClickedThisHurdle) {
+                this.isTrafficLightStopped = true;
+                this.hasClickedThisHurdle = true;
+                this.terrainSpeed = this.BASE_TERRAIN_SPEED * this.ACCELERATED_SPEED_MULTIPLIER;
+            }
+        }
+    }
+
+    private handleTouchEnd(e: TouchEvent) {
+        e.preventDefault(); // Prevenir el comportamiento por defecto
+        
+        if (this.gameOver) {
+            // Disparar un evento personalizado para mostrar el joystick
+            const showJoystickEvent = new CustomEvent('showJoystick');
+            document.dispatchEvent(showJoystickEvent);
+            this.initializeGame();
+        }
+    }
+
     private handleClick(e: MouseEvent) {
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+        
+        const clickX = (e.clientX - rect.left) * scaleX;
+        const clickY = (e.clientY - rect.top) * scaleY;
+
+        // Verificar si se hizo clic en algún botón
+        for (const button of this.buttons) {
+            if (
+                clickX >= button.x &&
+                clickX <= button.x + button.width &&
+                clickY >= button.y &&
+                clickY <= button.y + button.height
+            ) {
+                button.action();
+                return;
+            }
+        }
+
+        // Si no se hizo clic en ningún botón, manejar el clic normal del juego
         if (this.gameOver) {
             // Disparar un evento personalizado para mostrar el joystick
             const showJoystickEvent = new CustomEvent('showJoystick');
             document.dispatchEvent(showJoystickEvent);
             this.initializeGame();
         } else if (!this.hasClickedThisHurdle) {
-            // Detener el semáforo en el color actual
             this.isTrafficLightStopped = true;
             this.hasClickedThisHurdle = true;
-
-            // Aumentar la velocidad siempre que se seleccione un color
             this.terrainSpeed = this.BASE_TERRAIN_SPEED * this.ACCELERATED_SPEED_MULTIPLIER;
         }
+
         // Prevenir comportamientos por defecto
         e.preventDefault();
     }
@@ -1367,37 +1441,6 @@ export class Game {
                 action: () => this.showHelp()
             }
         ];
-    }
-
-    private handleCanvasClick(event: MouseEvent) {
-        const rect = this.canvas.getBoundingClientRect();
-        const scaleX = this.canvas.width / rect.width;
-        const scaleY = this.canvas.height / rect.height;
-        
-        const clickX = (event.clientX - rect.left) * scaleX;
-        const clickY = (event.clientY - rect.top) * scaleY;
-
-        // Verificar si se hizo clic en algún botón
-        for (const button of this.buttons) {
-            if (
-                clickX >= button.x &&
-                clickX <= button.x + button.width &&
-                clickY >= button.y &&
-                clickY <= button.y + button.height
-            ) {
-                button.action();
-                return;
-            }
-        }
-
-        // Si no se hizo clic en ningún botón, manejar el clic normal del juego
-        if (this.gameOver) {
-            this.initializeGame();
-        } else if (!this.hasClickedThisHurdle) {
-            this.isTrafficLightStopped = true;
-            this.hasClickedThisHurdle = true;
-            this.terrainSpeed = this.BASE_TERRAIN_SPEED * this.ACCELERATED_SPEED_MULTIPLIER;
-        }
     }
 
     private drawButtons() {
