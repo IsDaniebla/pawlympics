@@ -332,7 +332,7 @@
       .mini-scoreboard h3 {
         margin: 0 0 10px 0;
         color: #333;
-        font-size: 14px;
+        font-size: 18px;
         text-align: center;
       }
       .mini-score-table {
@@ -1143,6 +1143,17 @@
         if (gameContainer && canvas) {
           gameContainer.classList.add('fullscreen-mode');
           document.body.style.overflow = 'hidden';
+
+          // Forzar orientación landscape en dispositivos móviles
+          if (isMobileDevice && screen.orientation && screen.orientation.lock) {
+            try {
+              screen.orientation.lock('landscape').catch(error => {
+                console.warn('No se pudo bloquear la orientación:', error);
+              });
+            } catch (error) {
+              console.warn('Screen Orientation API no soportada:', error);
+            }
+          }
           
           // Calcular el tamaño óptimo para el canvas
           const aspectRatio = 800 / 400;
@@ -1204,6 +1215,15 @@
           gameContainer.classList.remove('fullscreen-mode');
           gameContainer.style.display = '';
           document.body.style.overflow = '';
+
+          // Liberar el bloqueo de orientación en dispositivos móviles
+          if (isMobileDevice && screen.orientation && screen.orientation.unlock) {
+            try {
+              screen.orientation.unlock();
+            } catch (error) {
+              console.warn('No se pudo desbloquear la orientación:', error);
+            }
+          }
           
           // Restaurar el tamaño original del canvas
           canvas.style.width = '800px';
