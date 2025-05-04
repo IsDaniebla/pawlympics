@@ -864,7 +864,10 @@ export class Game {
         // Actualizar efectos siempre, incluso en game over
         this.effects.update();
 
-        if (this.gameOver) return;
+        if (this.gameOver) {
+            // Ya no disparamos el evento gameOver
+            return;
+        }
 
         this.dog.update();
 
@@ -1090,6 +1093,12 @@ export class Game {
         this.gameOverStartTime = performance.now();
         this.soundEffects.playSound('game_over');
 
+        // Ocultar el joystick al finalizar la partida
+        const joystickContainer = document.getElementById('joystick-container');
+        if (joystickContainer) {
+            joystickContainer.classList.add('hidden');
+        }
+
         try {
             // Guardar la puntuación
             await this.scoreSystem.addScore(this.playerName, this.score, this.totalHurdles);
@@ -1097,10 +1106,6 @@ export class Game {
             // Actualizar la tabla de puntuaciones
             const updateScoreTableEvent = new CustomEvent('updateScoreTable');
             document.dispatchEvent(updateScoreTableEvent);
-
-            // Disparar el evento de game over
-            const gameOverEvent = new CustomEvent('gameOver');
-            document.dispatchEvent(gameOverEvent);
         } catch (error) {
             console.error('Error al guardar la puntuación:', error);
             // Intentar guardar localmente si falla la sincronización

@@ -723,6 +723,48 @@
         }
       }
 
+      function updateJoystickVisibility(shouldShow) {
+        const joystickContainer = document.getElementById('joystick-container');
+        if (joystickContainer) {
+          // Solo mostrar el joystick si no estamos en modo demo
+          if (game && !game.isDemoMode() && shouldShow) {
+            joystickContainer.classList.remove('hidden');
+          } else {
+            joystickContainer.classList.add('hidden');
+          }
+        }
+      }
+
+      function handleClick(e) {
+        if (this.gameOver) {
+          initGame();
+        } else if (!this.hasClickedThisHurdle) {
+          // Detener el semáforo en el color actual
+          this.isTrafficLightStopped = true;
+          this.hasClickedThisHurdle = true;
+
+          // Aumentar la velocidad siempre que se seleccione un color
+          this.terrainSpeed = this.BASE_TERRAIN_SPEED * this.ACCELERATED_SPEED_MULTIPLIER;
+        }
+        // Prevenir comportamientos por defecto
+        e.preventDefault();
+      }
+
+      function handleKeydown(e) {
+        // Evitar que el evento se procese múltiples veces
+        if (e.repeat) return;
+
+        if (e.code === 'Space' && this.gameOver) {
+          // Al reiniciar con espacio después de game over, mostrar el joystick si no estamos en demo
+          if (!game.isDemoMode()) {
+            updateJoystickVisibility(true);
+          }
+          initGame();
+          // Prevenir el comportamiento por defecto del espacio
+          e.preventDefault();
+        }
+      }
+
       function initGame() {
         const hurdlesCount = parseInt(document.getElementById('hurdlesCount').value) || 5;
         const playerSelect = document.getElementById('playerSelect');
@@ -736,15 +778,22 @@
           const modal = document.getElementById('instructions-modal');
           if (modal && modal.style.display === 'flex') {
             game.setDemoMode(true);
+            console.log("Ocultar joystick");
+            
+            updateJoystickVisibility(false);
+          } else {
+            game.setDemoMode(false);
+            updateJoystickVisibility(true);
           }
+        } else {
+          // Si el juego ya existe, mantener la visibilidad del joystick según el modo
+          updateJoystickVisibility(!game.isDemoMode());
         }
         
         // Reiniciar valores en la UI
         document.getElementById('currentHurdle').textContent = game.isDemoMode() ? '-/-' : `1/${hurdlesCount}`;
         document.getElementById('successfulHurdles').textContent = '0';
         document.getElementById('score').textContent = '0';
-        
-        showJoystick(); // Asegurar que el joystick esté visible
         
         game.setTotalHurdles(hurdlesCount);
         game.restart();
@@ -844,6 +893,8 @@
           // Reiniciar el juego y activar modo demostración
           if (game) {
             game.setDemoMode(true);
+            console.log("Ocultar joystick");
+            updateJoystickVisibility(false);
             initGame(); // Reiniciar completamente el juego
           }
         }
@@ -851,7 +902,18 @@
 
       // Exponer funciones necesarias globalmente
       window.selectPlayer = selectPlayer;
-      window.restartGame = initGame;
+      window.restartGame = function() {
+        if (game) {
+          const modal = document.getElementById('instructions-modal');
+          const isModalVisible = modal && modal.style.display === 'flex';
+          
+          // Solo mostrar el joystick si no estamos en modo demo y el modal no está visible
+          if (!game.isDemoMode() && !isModalVisible) {
+            updateJoystickVisibility(true);
+          }
+        }
+        initGame();
+      };
       window.showHelp = showHelp;
 
       // Escuchar el evento de actualización de la tabla de puntuaciones
@@ -861,6 +923,11 @@
       window.addEventListener('load', () => {
         // Mostrar el modal de instrucciones al inicio
         const modal = document.getElementById('instructions-modal');
+        
+        // Ocultar el joystick inicialmente ya que empezamos en modo demo
+        console.log("Ocultar joystick");
+        updateJoystickVisibility(false);
+
         if (modal) {
           modal.style.display = 'flex';
           // Activar el modo demostración
@@ -878,6 +945,7 @@
           // Desactivar el modo demostración y reiniciar el juego
           if (game) {
             game.setDemoMode(false);
+            updateJoystickVisibility(true);
             initGame(); // Reiniciar el juego al desactivar el modo demo
           }
         });
@@ -1059,25 +1127,20 @@
       document.addEventListener('mouseup', handleJoystickEnd);
       document.addEventListener('touchend', handleJoystickEnd);
 
-      function handleGameOver() {
-        const joystickContainer = document.getElementById('joystick-container');
-        if (joystickContainer) {
-          joystickContainer.classList.remove('hidden');
-        }
-      }
-
-      function showJoystick() {
-        const joystickContainer = document.getElementById('joystick-container');
-        if (joystickContainer) {
-          joystickContainer.classList.remove('hidden');
-        }
-      }
-
-      // Agregar el evento para escuchar cuando el juego termina
-      document.addEventListener('gameOver', handleGameOver);
-
       // Agregar el evento para mostrar el joystick
       document.addEventListener('showJoystick', showJoystick);
+
+      function showJoystick() {
+        if (game) {
+          const modal = document.getElementById('instructions-modal');
+          const isModalVisible = modal && modal.style.display === 'flex';
+          
+          // Solo mostrar el joystick si no estamos en modo demo y el modal no está visible
+          if (!game.isDemoMode() && !isModalVisible) {
+            updateJoystickVisibility(true);
+          }
+        }
+      }
     </script>
   </body>
 </html>
