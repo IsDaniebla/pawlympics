@@ -943,7 +943,7 @@ export class Game {
             const touchY = (touch.clientY - rect.top) * scaleY;
 
             // Verificar si el toque es en algún botón
-            let isButtonTouch = false;
+            
             for (const button of this.buttons) {
                 if (
                     touchX >= button.x &&
@@ -952,7 +952,6 @@ export class Game {
                     touchY <= button.y + button.height
                 ) {
                     button.action();
-                    isButtonTouch = true;
                     break;
                 }
             }
