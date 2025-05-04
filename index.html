@@ -1301,6 +1301,11 @@
             joystickContainer.style.bottom = '20px';
             joystickContainer.style.display = 'flex';
           }
+
+          // Manejar el audio
+          if (game) {
+            game.handleFullscreenChange(true);
+          }
         }
       }
 
@@ -1356,6 +1361,11 @@
           // Ocultar el canvas en dispositivos móviles
           if (canvasContainer && isMobileDevice) {
             canvasContainer.style.display = 'none';
+          }
+
+          // Manejar el audio
+          if (game) {
+            game.handleFullscreenChange(false);
           }
         }
       }

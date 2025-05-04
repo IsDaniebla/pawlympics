@@ -33,6 +33,16 @@ export class SoundEffects {
     public playSound(name: string) {
         if (this.isMuted || !this.sounds[name]) return;
 
+        // Verificar si es un dispositivo móvil y si no está en pantalla completa
+        const gameContainer = document.querySelector('.game-container');
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const isFullscreen = gameContainer?.classList.contains('fullscreen-mode') || false;
+
+        // Si es móvil y no está en pantalla completa, no reproducir sonido
+        if (isMobile && !isFullscreen) {
+            return;
+        }
+
         // Reiniciar el sonido si ya está reproduciéndose
         const sound = this.sounds[name];
         sound.currentTime = 0;

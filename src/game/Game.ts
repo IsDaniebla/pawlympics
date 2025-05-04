@@ -793,30 +793,41 @@ export class Game {
 
     private initializeBackgroundMusic() {
         try {
+            // Verificar si es un dispositivo móvil y si no está en pantalla completa
+            const gameContainer = document.querySelector('.game-container');
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const isFullscreen = gameContainer?.classList.contains('fullscreen-mode') || false;
+
             this.backgroundMusic = new Audio();
             this.backgroundMusic.src = 'audio/background-music.mp3';
             this.backgroundMusic.loop = true;
             this.backgroundMusic.volume = parseInt(this.volumeSlider.value) / 100;
             this.previousVolume = this.backgroundMusic.volume;
-            this.backgroundMusic.autoplay = true;
+            
+            // Solo establecer autoplay si no es móvil o está en pantalla completa
+            this.backgroundMusic.autoplay = !isMobile || isFullscreen;
 
             this.backgroundMusic.addEventListener('canplaythrough', () => {
                 console.log('Música cargada y lista para reproducir');
                 this.isMusicLoaded = true;
-                this.startBackgroundMusic();
+                if (!isMobile || isFullscreen) {
+                    this.startBackgroundMusic();
+                }
             });
 
             this.backgroundMusic.addEventListener('ended', () => {
                 console.log('La música terminó, reiniciando...');
                 if (this.backgroundMusic) {
                     this.backgroundMusic.currentTime = 0;
-                    this.startBackgroundMusic();
+                    if (!isMobile || isFullscreen) {
+                        this.startBackgroundMusic();
+                    }
                 }
             });
 
             this.backgroundMusic.addEventListener('pause', () => {
                 console.log('La música se pausó, intentando reanudar...');
-                if (!this.gameOver) {
+                if (!this.gameOver && (!isMobile || isFullscreen)) {
                     this.startBackgroundMusic();
                 }
             });
@@ -835,6 +846,16 @@ export class Game {
 
     private startBackgroundMusic() {
         if (this.backgroundMusic && this.isMusicLoaded && !this.isMusicPlaying && !this.gameOver) {
+            // Verificar si es un dispositivo móvil y si no está en pantalla completa
+            const gameContainer = document.querySelector('.game-container');
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const isFullscreen = gameContainer?.classList.contains('fullscreen-mode');
+
+            // Si es móvil y no está en pantalla completa, no reproducir música
+            if (isMobile && !isFullscreen) {
+                return;
+            }
+
             const playPromise = this.backgroundMusic.play();
 
             if (playPromise !== undefined) {
@@ -853,6 +874,29 @@ export class Game {
                         }, 1000);
                         this.isMusicPlaying = false;
                     });
+            }
+        }
+    }
+
+    private handleFullscreenChange(isFullscreen: boolean) {
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        if (isMobile) {
+            if (isFullscreen) {
+                // Reactivar el sonido si está en pantalla completa
+                if (this.backgroundMusic && !this.isMuted) {
+                    this.backgroundMusic.volume = this.previousVolume;
+                    this.startBackgroundMusic();
+                }
+                this.soundEffects.setVolume(this.previousVolume);
+            } else {
+                // Silenciar si no está en pantalla completa
+                if (this.backgroundMusic) {
+                    this.backgroundMusic.volume = 0;
+                    this.backgroundMusic.pause();
+                    this.isMusicPlaying = false;
+                }
+                this.soundEffects.setVolume(0);
             }
         }
     }
