@@ -12,6 +12,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  font-size: clamp(14px, 2vw, 16px);
 }
 
 #app {
@@ -23,9 +24,12 @@ body {
   border: 2px solid black;
   background-color: white;
   display: block;
-  margin: 20px auto;
-  border-radius: 8px;
+  margin: clamp(0.5rem, 2vh, 1.25rem) auto;
+  border-radius: 0.5rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 100%;
+  height: auto;
+  position: relative;
 }
 
 .game-container {
@@ -34,16 +38,17 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2rem;
+  padding: clamp(0.5rem, 3vw, 2rem);
   background-color: #f0f0f0;
+  gap: clamp(0.5rem, 2vh, 1.25rem);
 }
 
 .game-title {
-  font-size: 3rem;
+  font-size: clamp(2rem, 5vw, 3rem);
   color: #2c3e50;
-  margin-bottom: 2rem;
+  margin-bottom: clamp(1rem, 3vh, 2rem);
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: 0.125em;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
 }
 
@@ -58,15 +63,15 @@ body {
   justify-content: center;
   align-items: center;
   z-index: 9999;
+  padding: 1rem;
 }
 
 .modal-content {
   background-color: #ffffff;
-  padding: 2rem;
-  border-radius: 15px;
+  padding: clamp(1rem, 4vw, 2rem);
+  border-radius: 1rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  max-width: 500px;
-  width: 90%;
+  width: min(90%, 500px);
   text-align: center;
   color: #2c3e50;
   animation: modalAppear 0.3s ease-out;
@@ -85,20 +90,20 @@ body {
 
 .modal h2 {
   color: #2c3e50;
-  margin-bottom: 1.5rem;
-  font-size: 1.8rem;
+  margin-bottom: 1em;
+  font-size: clamp(1.5rem, 4vw, 1.8rem);
 }
 
 .instructions-text {
   text-align: left;
-  margin: 1.5rem 0;
+  margin: 1.5em 0;
   color: #2c3e50;
 }
 
 .instructions-text p {
   font-weight: bold;
-  font-size: 1.2rem;
-  margin-bottom: 1rem;
+  font-size: clamp(1rem, 3vw, 1.2rem);
+  margin-bottom: 1em;
 }
 
 .instructions-text ul {
@@ -107,8 +112,8 @@ body {
 }
 
 .instructions-text li {
-  margin: 1rem 0;
-  padding-left: 2rem;
+  margin: 1em 0;
+  padding-left: 2em;
   position: relative;
   color: #34495e;
 }
@@ -123,15 +128,89 @@ body {
   background-color: #3498db;
   color: white;
   border: none;
-  padding: 1rem 2rem;
-  border-radius: 25px;
-  font-size: 1.2rem;
+  padding: clamp(0.75rem, 2vw, 1rem) clamp(1.5rem, 4vw, 2rem);
+  border-radius: 2em;
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
   cursor: pointer;
   transition: all 0.3s ease;
-  margin-top: 1rem;
+  margin-top: 1em;
+  width: fit-content;
 }
 
 .start-button:hover {
   background-color: #2980b9;
   transform: scale(1.05);
+}
+
+.game-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(0.5rem, 2vw, 1.25rem);
+  align-items: center;
+  justify-content: center;
+  background-color: #fff;
+  padding: clamp(0.75rem, 2vw, 1.25rem);
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  width: min(100%, 800px);
+}
+
+.game-info {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  gap: clamp(1rem, 3vw, 2rem);
+  width: min(100%, 800px);
+  margin-bottom: clamp(1rem, 3vh, 1.25rem);
+}
+
+.score-panel, .points-panel {
+  background-color: white;
+  padding: clamp(0.75rem, 2vw, 1.25rem);
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  flex: 1;
+  min-width: min(100%, 200px);
+}
+
+.score-panel h3, .points-panel h3 {
+  margin: 0 0 0.75em 0;
+  color: #333;
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+}
+
+.points-list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5em;
+  align-items: center;
+}
+
+.color-dot {
+  width: 1em;
+  height: 1em;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 0.5em 1em;
+  border-radius: 0.25em;
+  cursor: pointer;
+  font-size: inherit;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+input {
+  padding: 0.5em;
+  border: 1px solid #ddd;
+  border-radius: 0.25em;
+  font-size: inherit;
+  width: min(100%, 200px);
 }

@@ -36,9 +36,6 @@ export class Game {
     private readonly INITIAL_HURDLE_X: number = 600;
     private readonly DOG_X: number = 150;
 
-
-
-
     private isTrafficLightStopped: boolean = false;
     private hasClickedThisHurdle: boolean = false;
     private trafficLightY: number = 0;
@@ -92,6 +89,18 @@ export class Game {
     private shieldAngle: number = Math.PI; // Ángulo inicial del escudo (180 grados)
     private isInDemoMode: boolean = false;
 
+    
+    private readonly BUTTON_HEIGHT = 30;
+    private readonly BUTTON_FONT = '16px Arial';
+    private buttons: {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+        text: string;
+        action: () => void;
+    }[] = [];
+
     constructor(canvasId: string, scoreSystem: ScoreSystem) {
         this.scoreSystem = scoreSystem;
         this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
@@ -115,6 +124,12 @@ export class Game {
         this.initializeGame();
 
         this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
+
+        // Inicializar los botones
+        this.initializeButtons();
+
+        // Agregar el event listener para los clics en los botones
+        this.canvas.addEventListener('click', this.handleCanvasClick.bind(this));
     }
 
     public setTotalHurdles(count: number) {
@@ -368,8 +383,6 @@ export class Game {
     }
 
     private drawTrafficLight() {
-
-
         // Función para dibujar un ala con plumas
         const drawWing = (isLeft: boolean) => {
             const baseX = this.TRAFFIC_LIGHT_X + (isLeft ? -25 : 25);
@@ -584,7 +597,6 @@ export class Game {
         }
     }
 
-
     private updateGameInfo() {
         const currentHurdleElement = document.getElementById('currentHurdle');
         const successfulHurdlesElement = document.getElementById('successfulHurdles');
@@ -640,6 +652,9 @@ export class Game {
         for (const arrow of this.arrows) {
             arrow.draw(this.ctx);
         }
+
+        // Dibujar los botones después de todo lo demás
+        this.drawButtons();
 
         if (this.gameOver) {
             // Si es el primer frame de gameOver, guardar el tiempo y reproducir sonido
@@ -891,8 +906,6 @@ export class Game {
         this.updateTrafficLightPosition(currentTime);
     }
 
-
-
     private checkCollision(rect1: { x: number, y: number, width: number, height: number },
         rect2: { x: number, y: number, width: number, height: number }): boolean {
         return rect1.x < rect2.x + rect2.width &&
@@ -926,12 +939,8 @@ export class Game {
             this.hurdle = new Hurdle(this.INITIAL_HURDLE_X, this.canvas.height - 90);
         }
 
-
-
-
         // Si estamos en transición y es la nueva valla, usar la velocidad base
         if (this.isTransitioning && this.nextHurdleReady) {
-
             this.isTransitioning = false; // Resetear el estado de transición
             this.nextHurdleReady = false; // Resetear el estado de la nueva valla
         } else {
@@ -1304,5 +1313,108 @@ export class Game {
 
     public setShieldAngle(angle: number): void {
         this.shieldAngle = angle;
+    }
+
+    private initializeButtons() {
+        const buttonY = 10;
+        const buttonPadding = 10;
+        
+        // Botón de reiniciar
+        const restartText = '🔄 Reiniciar';
+        this.ctx.font = this.BUTTON_FONT;
+        const restartWidth = this.ctx.measureText(restartText).width + (buttonPadding * 2);
+        
+        // Botón de ayuda
+        const helpText = '❓ Ayuda';
+        const helpWidth = this.ctx.measureText(helpText).width + (buttonPadding * 2);
+        
+        // Posicionar los botones en la esquina superior derecha
+        const restartX = this.canvas.width - restartWidth - helpWidth - 20;
+        const helpX = this.canvas.width - helpWidth - 10;
+
+        this.buttons = [
+            {
+                x: restartX,
+                y: buttonY,
+                width: restartWidth,
+                height: this.BUTTON_HEIGHT,
+                text: restartText,
+                action: () => this.initializeGame()
+            },
+            {
+                x: helpX,
+                y: buttonY,
+                width: helpWidth,
+                height: this.BUTTON_HEIGHT,
+                text: helpText,
+                action: () => this.showHelp()
+            }
+        ];
+    }
+
+    private handleCanvasClick(event: MouseEvent) {
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+        
+        const clickX = (event.clientX - rect.left) * scaleX;
+        const clickY = (event.clientY - rect.top) * scaleY;
+
+        // Verificar si se hizo clic en algún botón
+        for (const button of this.buttons) {
+            if (
+                clickX >= button.x &&
+                clickX <= button.x + button.width &&
+                clickY >= button.y &&
+                clickY <= button.y + button.height
+            ) {
+                button.action();
+                return;
+            }
+        }
+
+        // Si no se hizo clic en ningún botón, manejar el clic normal del juego
+        if (this.gameOver) {
+            this.initializeGame();
+        } else if (!this.hasClickedThisHurdle) {
+            this.isTrafficLightStopped = true;
+            this.hasClickedThisHurdle = true;
+            this.terrainSpeed = this.BASE_TERRAIN_SPEED * this.ACCELERATED_SPEED_MULTIPLIER;
+        }
+    }
+
+    private drawButtons() {
+        this.ctx.save();
+        
+        for (const button of this.buttons) {
+            // Dibujar el fondo del botón
+            this.ctx.fillStyle = '#4CAF50';
+            this.ctx.beginPath();
+            this.ctx.roundRect(button.x, button.y, button.width, button.height, 5);
+            this.ctx.fill();
+
+            // Dibujar el texto del botón
+            this.ctx.fillStyle = 'white';
+            this.ctx.font = this.BUTTON_FONT;
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(
+                button.text,
+                button.x + button.width / 2,
+                button.y + button.height / 2
+            );
+        }
+
+        this.ctx.restore();
+    }
+
+    private showHelp() {
+        const modal = document.getElementById('instructions-modal');
+        if (modal instanceof HTMLElement) {
+            modal.style.display = 'flex';
+            // Activar el modo demostración
+            this.setDemoMode(true);
+            this.initializeGame();
+        }
     }
 }

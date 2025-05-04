@@ -6,7 +6,6 @@ import './style.css'
 declare global {
   interface Window {
     selectPlayer: (player: string) => void;
-    restartGame: () => void;
   }
 }
 
@@ -37,74 +36,138 @@ document.addEventListener('DOMContentLoaded', () => {
     // Desactivar el modo demostración y reiniciar el juego
     game.setDemoMode(false)
     initGame() // Reiniciar el juego al desactivar el modo demo
-    
-    // Configurar eventos y funciones globales necesarias
-    window.selectPlayer = (player: string) => {
+  })
+
+  // Configurar eventos y funciones globales necesarias
+  window.selectPlayer = (player: string) => {
+    const playerSelect = document.getElementById('playerSelect') as HTMLInputElement
+    const playerList = document.getElementById('playerList')
+    playerSelect.value = player
+    if (playerList) {
+      playerList.style.display = 'none'
+    }
+    game?.setPlayerName(player)
+    initGame()
+  }
+
+  function initGame() {
+    const hurdlesInput = document.getElementById('hurdlesCount') as HTMLInputElement
+    const hurdlesCount = parseInt(hurdlesInput.value)
+    game?.setTotalHurdles(hurdlesCount)
+    game?.restart()
+    updateScoreTable()
+  }
+
+  function updateScoreTable() {
+    const hurdlesInput = document.getElementById('hurdlesCount') as HTMLInputElement
+    const hurdlesCount = parseInt(hurdlesInput.value)
+    const scores = scoreSystem.getTopScores(hurdlesCount)
+    const tbody = document.getElementById('miniScoreTableBody')
+
+    if (tbody) {
+      tbody.innerHTML = ''
+      scores.slice(0, 4).forEach((score, index) => {
+        const row = document.createElement('tr')
+        row.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${score.playerName}</td>
+          <td>${score.score}</td>
+        `
+        tbody.appendChild(row)
+      })
+    }
+  }
+
+  // Event listeners para el selector de jugador
+  const playerSelect = document.getElementById('playerSelect')
+  
+  playerSelect?.addEventListener('focus', function() {
+    updatePlayerList()
+  })
+
+  playerSelect?.addEventListener('input', updatePlayerList)
+  
+  playerSelect?.addEventListener('blur', () => {
+    setTimeout(() => {
       const playerSelect = document.getElementById('playerSelect') as HTMLInputElement
       const playerList = document.getElementById('playerList')
-      playerSelect.value = player
       if (playerList) {
         playerList.style.display = 'none'
       }
-      game?.setPlayerName(player)
-      initGame()
-    }
-
-    window.restartGame = () => {
-      initGame()
-    }
-
-    function initGame() {
-      const hurdlesInput = document.getElementById('hurdlesCount') as HTMLInputElement
-      const hurdlesCount = parseInt(hurdlesInput.value)
-      game?.setTotalHurdles(hurdlesCount)
-      game?.restart()
-      updateScoreTable()
-    }
-
-    function updateScoreTable() {
-      const hurdlesInput = document.getElementById('hurdlesCount') as HTMLInputElement
-      const hurdleCount = parseInt(hurdlesInput.value)
-      const scores = scoreSystem.getTopScores(hurdleCount)
       
-      // Actualizar tabla mini
-      const miniTbody = document.getElementById('miniScoreTableBody')
-      if (miniTbody) {
-        miniTbody.innerHTML = scores.slice(0, 4).map((score, index) => `
-          <tr>
-            <td>${index + 1}</td>
-            <td>${score.playerName.length > 8 ? score.playerName.substring(0, 8) + '...' : score.playerName}</td>
-            <td>${score.score}</td>
-          </tr>
-        `).join('')
+      if (!playerSelect.value.trim()) {
+        const previousValue = playerSelect.getAttribute('data-current-value') || 'Invitado'
+        updatePlayerInfo(previousValue)
       }
-    }
+    }, 200)
+  })
 
-    // Configurar eventos para el selector de jugador
+  playerSelect?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      const playerList = document.getElementById('playerList')
+      if (playerList) {
+        playerList.style.display = 'none'
+      }
+      initGame()
+    }
+  })
+
+  document.getElementById('hurdlesCount')?.addEventListener('change', () => {
+    updateScoreTable()
+    initGame()
+  })
+
+  // Función para actualizar la información del jugador
+  function updatePlayerInfo(playerName: string, updateInput = true) {
+    const playerSelect = document.getElementById('playerSelect') as HTMLInputElement
+    const finalName = playerName.trim() || playerSelect.getAttribute('data-current-value') || 'Invitado'
+    
+    if (updateInput) {
+      playerSelect.value = playerName
+    }
+    
+    playerSelect.setAttribute('data-current-value', finalName)
+    const currentPlayerElement = document.getElementById('currentPlayer')
+    if (currentPlayerElement) {
+      currentPlayerElement.textContent = finalName
+    }
+    
+    if (game) {
+      game.setPlayerName(finalName)
+    }
+  }
+
+  // Función para actualizar la lista de jugadores
+  function updatePlayerList() {
     const playerSelect = document.getElementById('playerSelect') as HTMLInputElement
     const playerList = document.getElementById('playerList')
+    const searchTerm = playerSelect.value.toLowerCase()
     
-    playerSelect?.addEventListener('input', () => {
-      const searchTerm = playerSelect.value.toLowerCase()
+    if (playerList) {
       const players = scoreSystem.getAllPlayers()
-      
-      if (playerList) {
-        const filteredPlayers = players.filter(player => 
-          player.toLowerCase().includes(searchTerm)
-        )
-        
-        playerList.style.display = 'block'
-        playerList.innerHTML = filteredPlayers
-          .map(player => `<div onclick="window.selectPlayer('${player}')">${player}</div>`)
-          .join('')
-          
-        if (filteredPlayers.length === 0) {
-          playerList.style.display = 'none'
-        }
-      }
-    })
+      const filteredPlayers = players.filter((player: string) => 
+        player.toLowerCase().includes(searchTerm)
+      )
 
-    // Iniciar el juego
+      playerList.innerHTML = ''
+      filteredPlayers.forEach((player: string) => {
+        const div = document.createElement('div')
+        div.textContent = player
+        div.onclick = () => window.selectPlayer(player)
+        playerList.appendChild(div)
+      })
+
+      playerList.style.display = filteredPlayers.length > 0 ? 'block' : 'none'
+    }
+  }
+
+  // Escuchar el evento de actualización de la tabla de puntuaciones
+  document.addEventListener('updateScoreTable', updateScoreTable)
+
+  // Inicializar el juego cuando la página cargue
+  window.addEventListener('load', () => {
+    updatePlayerInfo('Invitado')
+    updateScoreTable()
     initGame()
   })
 })
