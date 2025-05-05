@@ -68,4 +68,11 @@ export class SoundEffects {
     public isSoundMuted(): boolean {
         return this.isMuted;
     }
+
+    public stopAll() {
+        Object.values(this.sounds).forEach(sound => {
+            sound.pause();
+            sound.currentTime = 0;
+        });
+    }
 } 

@@ -200,7 +200,7 @@ export class Game {
     }
 
     private cleanup() {
-        // Cancelar el game loop actual
+        // Limpiar el game loop
         if (this.gameLoopId !== null) {
             cancelAnimationFrame(this.gameLoopId);
             this.gameLoopId = null;
@@ -210,26 +210,28 @@ export class Game {
         this.activeTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
         this.activeTimeouts = [];
 
-        // Remover event listeners antiguos
-        document.removeEventListener('keydown', this.boundKeydownHandler);
-        this.canvas.removeEventListener('touchstart', this.handleTouchStart.bind(this));
-        this.canvas.removeEventListener('touchend', this.handleTouchEnd.bind(this));
-        this.canvas.removeEventListener('click', this.boundClickHandler);
-
-        // Limpiar arrays y objetos
-        this.arrows = [];
-        this.allArrowPositions = [];
-        this.effects.clearAllParticles();
+        // Detener la música y limpiar efectos de sonido
+        if (this.backgroundMusic) {
+            this.backgroundMusic.pause();
+            this.backgroundMusic.currentTime = 0;
+        }
+        this.soundEffects.stopAll();
 
         // Reiniciar variables de estado
+        this.isJumping = false;
+        this.gameOver = false;
         this.isTransitioning = false;
         this.nextHurdleReady = false;
-        this.gameOver = false;
-        this.isJumping = false;
         this.hasClickedThisHurdle = false;
+        this.isTrafficLightStopped = false;
 
-        // Reiniciar el contexto del canvas
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        // Limpiar arrays
+        this.arrows = [];
+        this.allArrowPositions = [];
+
+        // Reiniciar contadores
+        this.arrowSpawnCounter = 0;
+        this.arrowCounter = 0;
     }
 
     private initializeArrowPositions() {
@@ -255,9 +257,10 @@ export class Game {
     }
 
     private initializeGame() {
+        // Limpiar el estado anterior
         this.cleanup();
 
-        // Reiniciar todas las variables del juego
+        // Reiniciar variables de juego
         this.score = 0;
         this.currentHurdle = 1;
         this.successfulHurdles = 0;
@@ -265,17 +268,13 @@ export class Game {
         this.effects.setGameOver(false);
         this.gameOverStartTime = 0;
         this.isJumping = false;
-
-        // Inicializar las posiciones de las flechas
-        this.initializeArrowPositions();
-
-        // Mostrar el joystick al iniciar o reiniciar el juego
-        const showJoystickEvent = new CustomEvent('showJoystick');
-        document.dispatchEvent(showJoystickEvent);
-
+        /* puede */
         this.isTransitioning = false;
         this.nextHurdleReady = false;
         this.trafficLightColors = ['red'];
+        this.dog = new Dog(this.DOG_X, this.canvas.height - 100);
+        this.hurdle = new Hurdle(this.INITIAL_HURDLE_X, this.canvas.height - 90);
+        /* puede fin */
         this.currentColorIndex = 0;
         this.lastColorChangeTime = 0;
         this.terrainOffset = 0;
@@ -283,22 +282,28 @@ export class Game {
         this.isTrafficLightStopped = false;
         this.hasClickedThisHurdle = false;
 
-        // Reinicializar elementos del juego
-        this.generateColorSequence();
-        this.dog = new Dog(this.DOG_X, this.canvas.height - 100);
-        this.hurdle = new Hurdle(this.INITIAL_HURDLE_X, this.canvas.height - 90);
+        // Reiniciar posiciones
+        this.dog.reset(this.DOG_X);
+
+        this.trafficLightY = this.trafficLightBaseY;
+
+        // Reiniciar elementos visuales
         this.initializeClouds();
         this.initializeGrassAndFlowers();
-        this.effects = new Effects();
+        this.initializeArrowPositions();
+        this.generateColorSequence();
 
-        // Agregar los nuevos event listeners
-        document.addEventListener('keydown', this.boundKeydownHandler);
-        this.canvas.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: false });
-        this.canvas.addEventListener('touchend', this.handleTouchEnd.bind(this), { passive: false });
-        this.canvas.addEventListener('click', this.boundClickHandler);
-
-        // Iniciar el nuevo game loop
+        // Iniciar el juego
         this.startGame();
+
+        // Actualizar la información en la UI
+        this.updateGameInfo();
+
+        // Mostrar el joystick si no estamos en modo demo
+        if (!this.isInDemoMode) {
+            const showJoystickEvent = new CustomEvent('showJoystick');
+            document.dispatchEvent(showJoystickEvent);
+        }
     }
 
     private generateColorSequence() {
