@@ -215,26 +215,26 @@ export class Game {
         this.canvas.removeEventListener('touchstart', this.handleTouchStart.bind(this));
         this.canvas.removeEventListener('touchend', this.handleTouchEnd.bind(this));
         this.canvas.removeEventListener('click', this.boundClickHandler);
-        
+
         // Limpiar arrays y objetos
         this.arrows = [];
         this.allArrowPositions = [];
         this.effects.clearAllParticles();
-        
+
         // Reiniciar variables de estado
         this.isTransitioning = false;
         this.nextHurdleReady = false;
         this.gameOver = false;
         this.isJumping = false;
         this.hasClickedThisHurdle = false;
-        
+
         // Reiniciar el contexto del canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
     private initializeArrowPositions() {
         this.allArrowPositions = [];
-        
+
         // Posiciones verticales (flechas que caen)
         for (const x of this.VERTICAL_ARROW_POSITIONS) {
             this.allArrowPositions.push({
@@ -243,7 +243,7 @@ export class Game {
                 isVertical: true
             });
         }
-        
+
         // Posiciones horizontales (flechas que vienen de los lados)
         for (const y of this.HORIZONTAL_ARROW_POSITIONS) {
             this.allArrowPositions.push({
@@ -943,7 +943,7 @@ export class Game {
             const touchY = (touch.clientY - rect.top) * scaleY;
 
             // Verificar si el toque es en algún botón
-            
+            let isButtonTouch = false;
             for (const button of this.buttons) {
                 if (
                     touchX >= button.x &&
@@ -952,11 +952,17 @@ export class Game {
                     touchY <= button.y + button.height
                 ) {
                     button.action();
+                    isButtonTouch = true;
                     break;
                 }
             }
 
-
+            // Si no es un toque en un botón y no se ha detenido el semáforo
+            if (!isButtonTouch && !this.hasClickedThisHurdle) {
+                this.isTrafficLightStopped = true;
+                this.hasClickedThisHurdle = true;
+                this.terrainSpeed = this.BASE_TERRAIN_SPEED * this.ACCELERATED_SPEED_MULTIPLIER;
+            }
         }
     }
 

@@ -1548,9 +1548,7 @@
         }
         
         if (game) {
-          if (game.gameOver) {
-            game.initializeGame();
-          } else if (!game.hasClickedThisHurdle) {
+          if (!game.hasClickedThisHurdle) {
             game.isTrafficLightStopped = true;
             game.hasClickedThisHurdle = true;
             game.terrainSpeed = game.BASE_TERRAIN_SPEED * game.ACCELERATED_SPEED_MULTIPLIER;
