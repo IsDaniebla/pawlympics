@@ -46,8 +46,8 @@ Juego desafiante donde el objetivo es acumular la mayor cantidad de puntos, elig
  - Do not add extra features that have not been requested. If you think it is necessary, ask if you want to integrate them and explain it.
  - Always respond in Spanish
 
-- Se buscó en caso de querer una nueva funcionalidad explicar que es lo que se desea de forma clara sin tanto texto y tratar de agregar como se espera que se comporte con el resto del sistema
-- Cuando había problemas que la IA no podía resolver se buscó manualmente el origen del problema para identificarlo y explicarle a la IA cuál es el origen del problema.
-- Había momentos en los que era necesario especificar que solo especificamente se concentre en el problema dado que termina modificando otras funcionalidades
-- Encontré que la IA es muy buena para que te explique el recorrido de ejecución de una acción y es fácil pedir que agregue console.log a momentos clave
-- Se confió en el contexto global de la aplicación pero en ocaciones para momento específicos fue necesario hablar técnicamente de cada cosa dentro del sistema para ser más claros
+- En caso de querer una nueva funcionalidad, se procuró explicar claramente qué es lo que se desea, sin extenderse demasiado en el texto, y tratar de agregar cómo se espera que se comporte con el resto del sistema.
+- Cuando había problemas que la IA no podía resolver, se buscó manualmente el origen del problema para identificarlo y luego explicárselo a la IA con mayor precisión.
+- Hubo momentos en los que fue necesario especificar que se concentrara únicamente en el problema en cuestión, ya que a veces terminaba modificando otras funcionalidades innecesariamente.
+- Descubrí que la IA es muy buena explicando el recorrido de ejecución de una acción, y es fácil pedirle que agregue console.log en momentos clave para ayudar en el análisis.
+- Aunque se confió en el contexto global de la aplicación, en ocasiones fue necesario hablar técnicamente de cada componente del sistema para que las respuestas fueran más claras y precisas.
