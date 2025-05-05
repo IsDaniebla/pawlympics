@@ -19,8 +19,8 @@ export class Game {
     private gameOver: boolean = false;
     private gameOverStartTime: number = 0;
     private readonly CONFETTI_DURATION: number = 4000; // 4 segundos en milisegundos
-    private boundKeydownHandler: (e: KeyboardEvent) => void;
-    private boundClickHandler: (e: MouseEvent) => void;
+    public boundKeydownHandler: (e: KeyboardEvent) => void;
+    public boundClickHandler: (e: MouseEvent) => void;
     private gameLoopId: number | null = null;
     private trafficLightColors: string[] = ['red'];
     private currentColorIndex: number = 0;
