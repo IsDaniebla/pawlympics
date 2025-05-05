@@ -210,12 +210,15 @@ export class Game {
         this.activeTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
         this.activeTimeouts = [];
 
-        // Detener la música y limpiar efectos de sonido
-        if (this.backgroundMusic) {
-            this.backgroundMusic.pause();
-            this.backgroundMusic.currentTime = 0;
+        // Solo detener la música si el juego está realmente terminando
+        if (this.gameOver) {
+            if (this.backgroundMusic) {
+                this.backgroundMusic.pause();
+                this.backgroundMusic.currentTime = 0;
+                this.isMusicPlaying = false;
+            }
+            this.soundEffects.stopAll();
         }
-        this.soundEffects.stopAll();
 
         // Reiniciar variables de estado
         this.isJumping = false;
@@ -878,7 +881,7 @@ export class Game {
     }
 
     private startBackgroundMusic() {
-        if (this.backgroundMusic && this.isMusicLoaded && !this.isMusicPlaying && !this.gameOver) {
+        if (this.backgroundMusic && this.isMusicLoaded && !this.gameOver) {
             // Verificar si es un dispositivo móvil y si no está en pantalla completa
             const gameContainer = document.querySelector('.game-container');
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -899,13 +902,17 @@ export class Game {
                     })
                     .catch(error => {
                         console.error('Error al reproducir la música:', error);
+                        this.isMusicPlaying = false;
+                        // Reiniciar el estado de reproducción
+                        if (this.backgroundMusic) {
+                            this.backgroundMusic.currentTime = 0;
+                        }
                         // Programar un nuevo intento en 1 segundo
                         setTimeout(() => {
-                            if (!this.isMusicPlaying && !this.gameOver) {
+                            if (!this.gameOver) {
                                 this.startBackgroundMusic();
                             }
                         }, 1000);
-                        this.isMusicPlaying = false;
                     });
             }
         }
