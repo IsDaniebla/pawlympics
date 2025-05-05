@@ -756,7 +756,7 @@ export class Game {
 
             // Instrucciones para reiniciar
             this.ctx.font = 'bold 24px Arial';
-            this.ctx.fillText('Presiona ESPACIO para reiniciar', this.canvas.width / 2, this.canvas.height / 2 + 160);
+            this.ctx.fillText('Presiona para reiniciar', this.canvas.width / 2, this.canvas.height / 2 + 160);
 
             // Restablecer alineación del texto
             this.ctx.textAlign = 'left';
